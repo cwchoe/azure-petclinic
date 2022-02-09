@@ -107,8 +107,21 @@
         * `Project Settings` - `Service Connections` 에서 신규 생성
           1) `Kubernetes`을 선택후 Subsciption, Cluster, Namespace를 선택 후 생성
           2) `Docker Registry`를 선택 후 Azure Container Registry, Subscription, 레지스트리 선택후 생성 -->
+6. CI/CD Pipelineing을 위한 Git Branch 전략
 
-6. Azure Pipeline 구성
+    * GitHub Branch와 Git Branch 전략을 혼합하여 간결하지만 통제가 가능한 효율적인 Branch전략을 운영함. 
+
+    <img title="Git branch" alt="Git branch" src="img/gitbranch.png">
+
+    * Main브랜치 기준으로 Feature 브랜치로 기능 개발. 계발계에 배포 필요할 경우 태깅으로 통제(ex: 1.0-SNAPSHOT1)
+    * Merge는 Pull Request(PR)로 리뷰 후 Merge할 수 있도록 강제
+    * 릴리즈를 위해서는 Release브랜치 생성. Main에 Merge되지 않은 Feature브랜치는 Release에 PR후 Merge
+    * RC버전 태깅(1.0-RC1)으로 Stage계 배포, RELEASE버전 태깅(1.0-RELEASE)으로 운영계 배포. 운영계 배포 후 Main에 Merge
+    * CI/CD 파이프라인은 Commit/PR/Tagging별로 동적 파이프라인을 구성. 예를 들면 Commit 은 기본 CI만 작동되고 PR은 CI 전체, Tagging은 개발계 or Stage계 or 운영계 배포 CD가 Trigger될 수 있도록 구성.
+    
+
+
+7. Azure Pipeline 구성
  
     * 목표 CI/CD 파이프라인
 
@@ -135,23 +148,194 @@
 
       > SonarQube Task는 SonarQube를 OSS로 사용할 경우 Branch 별 분석이 안되므로 `mvn sonar:sonar` goal을 사용하는 것을 추천
 
-    * 완성된 파이프라인 코드 (예시)
+    * 완성된 파이프라인 코드 - Trigger 부문
+      * CI/CD 파이프라인을 1개의 코드로 관리. 코드로 분기하여 사용. 코드가 commit되면 무조건 실행 (CI/CD 포함)
         ```yaml
+            trigger:
+                tags:
+                    include:
+                    - '*'
+                branches:  
+                    include:
+                    - '*'
+            resources:
+            - repo: self
+
+            variables:
+
+                # Container registry service connection established during pipeline creation
+                dockerRegistryServiceConnection: 
+                imageRepository:
+                containerRegistry: 
+                dockerfilePath: '**/Dockerfile'
+                tag: '$(Build.BuildId)'
+                imagePullSecret: 
+                # Maven Caching
+                MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
+                MAVEN_OPTS: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+                # Agent VM image name
+                vmImageName: 'ubuntu-latest'
+        ```
+
+    * CI (Build 부문)
+      * Maven Test, Build, Docker Build 및 배포를 수행하나 Commit과 Tagging에 따라 어느 Job까지 실행될 것인지 `condition`을 통해 정의
+      * Maven repository를 재활용하기 위해 Cache Task활용
+      * SonarQube는 `mvn sonar:sonar` 형태로 Maven Goal로 실행
+        ```yaml
+        stages:
+        - stage: Build
+          displayName: Build stage
+          jobs:
+          - job: Build
+            displayName: Build
+            pool:
+              vmImage: $(vmImageName)
+              
+            steps:
+            - task: AzureKeyVault@1
+              inputs:
+                azureSubscription: 
+                KeyVaultName:
+                SecretsFilter: 'postgres-url, postgres-user, postgres-pass, sonar-url, sonar-token'           
+                RunAsPreJob: false             
+
+            - task: Cache@2
+              displayName: Cache Maven local repo  
+              inputs:
+                key: 'maven | "$(Agent.OS)" | **/pom.xml'
+                restoreKeys: |
+                  maven | "$(Agent.OS)"
+                  maven
+                path: $(MAVEN_CACHE_FOLDER) 
+
+            - task: Maven@3
+              displayName: Maven Build
+              inputs:
+                mavenPomFile: 'Application/pom.xml'
+                publishJUnitResults: true
+                codeCoverageTool: 'jacoco'
+                codeCoverageClassFilesDirectories:  'Application/target/classes, Application/target/testClasses'
+                codeCoverageSourceDirectories: 'Application/src/java, Application/src/test'
+                javaHomeOption: 'JDKVersion'
+                jdkVersionOption: 1.11
+                mavenVersionOption: 'Default'
+                mavenOptions: '$(MAVEN_OPTS)'
+                mavenAuthenticateFeed: false
+                effectivePomSkip: false
+                options: '-DPOSTGRES_URL=$(postgres-url) -DPOSTGRES_USER=$(postgres-user) -DPOSTGRES_PASS=$(postgres-pass)'
+                goals: "-B package"
+         
+            - task: Maven@3
+              displayName: Static Analysis on SonarQube
+              inputs:     
+                mavenPomFile: 'Application/pom.xml'
+                mavenOptions: '$(MAVEN_OPTS)'
+                goals: "-B sonar:sonar"
+                options: "-Dsonar.projectKey=azure-spring -Dsonar.host.url=$(sonar-url) -Dsonar.login=$(sonar-token)"
+            
+            - task: Docker@2
+              displayName: Build and push an image to container registry
+              condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variables['build.sourceBranch'], 'RELEASE'))
+              inputs:
+                command: buildAndPush
+                repository: $(imageRepository)
+                dockerfile: $(dockerfilePath)
+                containerRegistry: $(dockerRegistryServiceConnection)
+                tags: |
+                  $(tag)
+
+            - upload: manifests
+              condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variables['build.sourceBranch'], 'RELEASE'))
+              artifact: manifests
+        ```
+
+    * CD (Deploy) 부문
+        * Stage계와 Production계로 구분한 후 `environment`정의. environment별 리소스 (여기선 Kubernetes Resourcef)를 정의하고 다음과 같은 체크 항목을 정의할 수 있음.
+
+        | 구분    | 설명                                    |
+        | ---------- | ---------------------------------------------- |
+        | Approval | Deploy전 특정 사용자(그룹)에게 승인을 받아야함.             |
+        | Branch Control  | 특정 브랜치에서만 배포가 되도록 구성 
+        | Businees Hours  | 특정시간에만 배포가 가능하도록 설정 
+
+
+        > 이 프로젝트에서는 Approval기능만 사용함. Branch Control은 파이프라인 코드 내 `condition`으로 통제
+       
+        * CD 샘플 파이프라인 코드
+
+        ```yaml
+        - stage: Deploy
+          displayName: Deploy stage
+          dependsOn: Build
+          condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variables['build.sourceBranch'], 'RELEASE'))
+
+          jobs:
+          - deployment: Deploy
+            displayName: Deploy
+            pool:
+              vmImage: $(vmImageName)
+            environment: 'stage.staged48e'
+            strategy:
+              runOnce:
+                deploy:
+                  steps:
+                  - task: KubernetesManifest@0
+                    displayName: Create imagePullSecret
+                    inputs:
+                      action: createSecret
+                      secretName: $(imagePullSecret)
+                      dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
+
+                  - task: KubernetesManifest@0
+                    displayName: Deploy to Kubernetes cluster
+                    inputs:
+                      action: deploy
+                      manifests: |
+                        $(Pipeline.Workspace)/manifests/deployment.yml
+                        $(Pipeline.Workspace)/manifests/secretproviderclass.yml
+                        $(Pipeline.Workspace)/manifests/service.yml
+                      imagePullSecrets: |
+                        $(imagePullSecret)
+                      containers: |
+                        $(containerRegistry)/$(imageRepository):$(tag)
+
+        - stage: Deploy_prod
+          displayName: Deploy production
+          dependsOn: Build
+          condition: contains(variables['build.sourceBranch'], 'RELEASE')
+
+          jobs:
+          - deployment: Deploy
+            displayName: Deploy
+            pool:
+              vmImage: $(vmImageName)
+            environment: 'prod.prodd82'
+            strategy:
+              runOnce:
+                deploy:
+                  steps:
+                  - task: KubernetesManifest@0
+                    displayName: Create imagePullSecret
+                    inputs:
+                      action: createSecret
+                      secretName: $(imagePullSecret)
+                      dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
+
+                  - task: KubernetesManifest@0
+                    displayName: Deploy to Kubernetes cluster
+                    inputs:
+                      action: deploy
+                      manifests: |
+                        $(Pipeline.Workspace)/manifests/deployment.yml
+                        $(Pipeline.Workspace)/manifests/secretproviderclass.yml
+                        $(Pipeline.Workspace)/manifests/service.yml
+                      imagePullSecrets: |
+                        $(imagePullSecret)
+                      containers: |
+                        $(containerRegistry)/$(imageRepository):$(tag)           
+
+        ```
+        > Branch 조건은 ` contains(variables['build.sourceBranch'], 'RELEASE')`와 같이 통제하고 Stage는 `RC`, `RELEASE`, Production은 `RELEASE` Tagging시에만 Triggering되도록 구성.
 
         
-        ```
 
-    
-    * 
-    * Pipeline 주요항목 설명
-  
-        CI/CD 파이프라인을 1개의 코드로 관리. 코드로 분기하여 사용. 코드가 commit되면 무조건 실행 (CI/CD 포함)
-        ```yaml
-        trigger:
-            tags:
-                include:
-                - '*'
-            branches:  
-                include:
-                - '*'
-        ```
