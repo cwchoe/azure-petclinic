@@ -61,6 +61,9 @@
     * Project name, Azure DevOps 조직, Kubernetes 신규 생성, 로케이션 Korea Central로 선택하여 생성.
 
 2. Git 설정
+
+    > <https://git-scm.com/book/ko/v2/%EC%8B%9C%EC%9E%91%ED%95%98%EA%B8%B0-Git-%EC%B5%9C%EC%B4%88-%EC%84%A4%EC%A0%95>
+
     * 샘플 어플리케이션 Clone
 
     ```bash
@@ -73,9 +76,9 @@
     rm -rf .git
     git add . 
     git commit -am "first commit"
+    git branch -M main
     git remote add origin <신규생성 repo>
-    git pull 
-    git push
+    git push -u origin main
     ```
 
     [<img title="배포" src="img/deploy-to-azure.png">](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fopenhackpublic.blob.core.windows.net%2Flob-migration%2Fsept-2021%2FSmartHotelFull.json
