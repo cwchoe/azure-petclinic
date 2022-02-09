@@ -3,7 +3,6 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "servers_azsp_postgres_name": {
-            "defaultValue": "azsp-postgres",
             "type": "String"
         }
     },

@@ -81,5 +81,8 @@
     git push -u origin main
     ```
 
-    [<img title="배포" src="img/deploy-to-azure.png">](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fopenhackpublic.blob.core.windows.net%2Flob-migration%2Fsept-2021%2FSmartHotelFull.json
-)
+3. Azure Postgres 배포
+
+    * 어플리케이션에서 사용할 DBMS를 배포.
+
+    [<img title="배포" src="img/deploy-to-azure.png">](https://portal.azure.com/#create/Microsoft.Template/uri/https%3a%2f%2fraw.githubusercontent.com%2fHakjunMIN%2fazure-petclinic%2fmain%2fArmTemplates%2fpostgres-template.json)
