@@ -155,30 +155,30 @@
 * CI/CD 파이프라인을 1개의 코드로 관리. 코드로 분기하여 사용. 코드가 commit되면 무조건 실행 (CI/CD 포함)
 
 ```yaml
-    trigger:
-        tags:
-            include:
-            - '*'
-        branches:  
-            include:
-            - '*'
-    resources:
-    - repo: self
+trigger:
+    tags:
+        include:
+        - '*'
+    branches:  
+        include:
+        - '*'
+resources:
+- repo: self
 
-    variables:
+variables:
 
-        # Container registry service connection established during pipeline creation
-        dockerRegistryServiceConnection: 
-        imageRepository:
-        containerRegistry: 
-        dockerfilePath: '**/Dockerfile'
-        tag: '$(Build.BuildId)'
-        imagePullSecret: 
-        # Maven Caching
-        MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
-        MAVEN_OPTS: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
-        # Agent VM image name
-        vmImageName: 'ubuntu-latest'
+    # Container registry service connection established during pipeline creation
+    dockerRegistryServiceConnection: 
+    imageRepository:
+    containerRegistry: 
+    dockerfilePath: '**/Dockerfile'
+    tag: '$(Build.BuildId)'
+    imagePullSecret: 
+    # Maven Caching
+    MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
+    MAVEN_OPTS: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+    # Agent VM image name
+    vmImageName: 'ubuntu-latest'
 ```
 
 ##### CI (Build 부문)
