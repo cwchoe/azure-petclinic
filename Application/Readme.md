@@ -7,7 +7,21 @@
 
 Sample Java Spring Boot web application using Azure PostgreSQL
 
+## Prequisite
+
+Azure PostgreSQL should be already run.
+
 ## How to run
+
+### Maven build
+
+```bash
+    ./mvnw package
+```
+
+### Docker build and run
+
+    * Replace postgres service name
 
 ```bash
     export POSTGRES_URL='jdbc:postgresql://<your-postgres-name>.postgres.database.azure.com/petclinic?sslmode=verify-full&&sslfactory=org.postgresql.ssl.SingleCertValidatingFactory&sslfactoryarg=classpath:BaltimoreCyberTrustRoot.crt.pem'
@@ -20,8 +34,6 @@ Sample Java Spring Boot web application using Azure PostgreSQL
 
     docker run pet -e POSTGRES_URL=$POSTGRES_URL -e POSTGRES_USER=$POSTGRES_USER -e POSTGRES_PASS=$POSTGRES_PASS 
 ```
-
-
 
 ## License:
 

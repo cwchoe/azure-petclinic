@@ -68,7 +68,7 @@
     
 3. Azure Postgres 배포
 
-    * 어플리케이션에서 사용할 DBMS를 배포.
+    * 어플리케이션에서 사용할 DBMS 배포.
 
         [<img title="배포" src="img/deploy-to-azure.png">](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fazure-quickstart-templates%2Fmaster%2Fquickstarts%2Fmicrosoft.dbforpostgresql%2Fmanaged-postgresql-with-vnet%2Fazuredeploy.json)
 
@@ -103,15 +103,46 @@
         git push -u origin master
     ```
 
-    * Pipeline에서 생성할 Azure service connection설정
-        * `Project Settings` > `Service Connections` 에서 신규 생성
+    <!-- * Pipeline에서 생성할 Azure service connection설정
+        * `Project Settings` - `Service Connections` 에서 신규 생성
           1) `Kubernetes`을 선택후 Subsciption, Cluster, Namespace를 선택 후 생성
-          2) `Docker Registry`를 선택 후 Azure Container Registry, Subscription, 레지스트리 선택후 생성
+          2) `Docker Registry`를 선택 후 Azure Container Registry, Subscription, 레지스트리 선택후 생성 -->
 
-    * Pipeline생성
-      * Pipelines > `Create Pipeline` > `Azure Repos Git` > <repository선택> > `azure-pipelines.yml` 선택
+6. Azure Pipeline 구성
+ 
+    * 목표 CI/CD 파이프라인
+
+        <img title="CI/CD" alt="CI/CD" src="img/goal-pipeline.png">
+
+    * 초기 파이프라인 생성
+
+       * Pipelines - `Create Pipeline` - `Azure Repos Git` - <repository선택> 
+       * `Configure your pipeline` - `Deploy To Azure Kubernetes Service` 
+
+        클러스터, 네임스페이스, 컨테이너 레지스트리, 이미지 이름, 서비스 포트 지정
+
+       * `azure-pipelines.yml`의 코드가 자동으로 생성됨
+
+    * Azure KeyVault Task 추가
+
+      > 배포 시 각종 비밀 정보를 가져오기 위한 연결임.
+
+      * `Show assistant`를 클릭하여 `Azure Key Vault`항목 추가
+
+      * 앞에서 생성한 KeyVault정보 입력하고 `Add`
+
+    * Maven Task 및 SonarQube Task추가
+
+      > SonarQube Task는 SonarQube를 OSS로 사용할 경우 Branch 별 분석이 안되므로 `mvn sonar:sonar` goal을 사용하는 것을 추천
+
+    * 완성된 파이프라인 코드 (예시)
+        ```yaml
+
+        
+        ```
+
     
-
+    * 
     * Pipeline 주요항목 설명
   
         CI/CD 파이프라인을 1개의 코드로 관리. 코드로 분기하여 사용. 코드가 commit되면 무조건 실행 (CI/CD 포함)
