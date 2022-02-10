@@ -1,6 +1,23 @@
 # Azure DevOps Hands-on
 
-## 환경
+## Hands-on 특징
+
+* 단일 Spring Boot Project, [Spring Petclinic](https://github.com/spring-projects/spring-petclinic)로 Azure의 기본적인 리소스를 사용하며 Azure DevOps를 이용한 프로덕션에 필요한 기본적인 CI/CD pipelining을 구성함.
+
+    > Petclinic의 Microservice Architecture 버전은 [링크](https://github.com/euchungmsft/spring-petclinic-microservices) 참고)
+
+## 필요 도구
+
+* Azure 구독
+* [Git client](https://git-scm.com/downloads)
+* [Azure Cli](https://docs.microsoft.com/ko-kr/cli/azure/install-azure-cli)
+* [kubectl](https://kubernetes.io/ko/docs/tasks/tools/install-kubectl-linux/)
+* [Helm](https://helm.sh/ko/docs/intro/install/)
+* IDE (VS Code, IntelliJ .. )
+* OSX, WSL, Linux
+* (선택) Azure Data Studio
+  
+## 사용 리소스 및 환경
 
 * Azure Kubernetes Service(incl. Container Registry)
 * Azure DevOps
@@ -18,7 +35,7 @@
 2. DevOps Starter로 원클릭 구성
    * 한번에 K8S, Repo, Pipeline, 샘플 PJT, 모니터링 등 기본환경 구성
 3. CI파이프라인 강화
-    * SonarQube로 테스트 결과, 정점점검 결과 수집
+    * SonarQube로 테스트 결과, 정적점검 결과 수집
 4. CD파이프라인 강화
    * 개발계, 테스트계, 운영계 파아프라인 구성
    * 단계 별 승인과정 추가
@@ -49,52 +66,69 @@
 
 > 참고문서: <https://docs.microsoft.com/ko-kr/azure/devops-project/overview>
 
-### DevOps Starter에서 `create`로 신규 프로젝트를 생성
+## DevOps Starter에서 `create`로 신규 프로젝트를 생성
 
-    * 랭귀지 선택 전 아래 그림과 같이 나오는 `here`링크를 통해 `Azure DevOps`와 `GitHub Action`중 하나를 선택할 수 있음. 
-    <img title="선택지" alt="선택지 " src="img/img1.png">
+* 랭귀지 선택 전 아래 그림과 같이 나오는 `here`링크를 통해 `Azure DevOps`와 `GitHub Action`중 하나를 선택할 수 있음.
 
-    > GitHub Action vs Azure DevOps?
-    > <https://docs.microsoft.com/ko-kr/dotnet/architecture/devops-for-aspnet-developers/actions-vs-pipelines>
+    !["선택지"](img/img1.png)
 
-    * `Azure DevOps`선택
-    * Language: `JAVA`, Framework: `Spring`, Service: `Kubernetes Service` 선택
-    * Project name, Azure DevOps 조직, Kubernetes 신규 생성, 로케이션 Korea Central로 선택하여 생성.
+> GitHub Action vs Azure DevOps?
+> <https://docs.microsoft.com/ko-kr/dotnet/architecture/devops-for-aspnet-developers/actions-vs-pipelines>
 
-### Git 설정
+* `Azure DevOps`선택
+* Language: `JAVA`, Framework: `Spring`, Service: `Kubernetes Service` 선택
+* Project name, Azure DevOps 조직, Kubernetes 신규 생성, 로케이션 Korea Central로 선택하여 생성.
 
-    > <https://git-scm.com/book/ko/v2/%EC%8B%9C%EC%9E%91%ED%95%98%EA%B8%B0-Git-%EC%B5%9C%EC%B4%88-%EC%84%A4%EC%A0%95>
+## Git 설정
 
-    > Git ssh 공개키 생성: https://git-scm.com/book/ko/v2/Git-%EC%84%9C%EB%B2%84-SSH-%EA%B3%B5%EA%B0%9C%ED%82%A4-%EB%A7%8C%EB%93%A4%EA%B8%B0
+* Git 초기설정: <https://git-scm.com/book/ko/v2/%EC%8B%9C%EC%9E%91%ED%95%98%EA%B8%B0-Git-%EC%B5%9C%EC%B4%88-%EC%84%A4%EC%A0%95>
 
-### Azure Postgres 배포
+* Git ssh 공개키 생성: https://git-scm.com/book/ko/v2/Git-%EC%84%9C%EB%B2%84-SSH-%EA%B3%B5%EA%B0%9C%ED%82%A4-%EB%A7%8C%EB%93%A4%EA%B8%B0
 
-    * 어플리케이션에서 사용할 DBMS 배포.
+## Azure Postgres 배포
 
-        [<img title="배포" src="img/deploy-to-azure.png">](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fazure-quickstart-templates%2Fmaster%2Fquickstarts%2Fmicrosoft.dbforpostgresql%2Fmanaged-postgresql-with-vnet%2Fazuredeploy.json)
+* 어플리케이션에서 사용할 DBMS 배포.
 
-    * 생성 후 연결문자열, ID, 패스워드 등을 KeyVault로 관리 예정
+    [![](img/deploy-to-azure.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fazure-quickstart-templates%2Fmaster%2Fquickstarts%2Fmicrosoft.dbforpostgresql%2Fmanaged-postgresql-with-vnet%2Fazuredeploy.json)
 
-### Azure KeyVault 생성
+* 생성 후 연결문자열, ID, 패스워드 등을 KeyVault로 관리 예정
 
-    * 이 [문서](https://docs.microsoft.com/ko-kr/azure/key-vault/general/quick-create-portal)를 참고하여 서비스 생성
+## Azure KeyVault 생성
 
-    * 개체 > 비밀에서 아래 항목 생성
-      * `postgres-pass`, `postgres-url`, `postgres-user`
+* 이 [문서](https://docs.microsoft.com/ko-kr/azure/key-vault/general/quick-create-portal)를 참고하여 서비스 생성
 
-### Azure DevOps 프로젝트 구성
+* 개체 > 비밀에서 아래 항목 생성
+  * `postgres-pass`, `postgres-url`, `postgres-user`
 
-#### Azure DevOps에서 ssh 공개키 등록
+```bash
+    az keyvault secret set --vault-name <your-keyvault> --name prod-postgres-url --value "jdbc:postgresql://<your-postgres-name>.postgres.database.azure.com/petclinic?sslmode=verify-full&&sslfactory=org.postgresql.ssl.SingleCertValidatingFactory&sslfactoryarg=classpath:BaltimoreCyberTrustRoot.crt.pem"
 
-<img title="Git설정" alt="Git설정" src="img/gitssh.png">
+    az keyvault secret set --vault-name <your-keyvault> --name prod-postgres-user --value <user>@<your-postgres-name>
 
-#### 실습코드 다운로드
+    az keyvault secret set --vault-name <your-keyvault> --name prod-postgres-pass --value <password>
+```
+
+## Azure DevOps 프로젝트 구성
+
+### Azure DevOps에서 ssh 공개키 등록
+
+!["Git설정"](img/gitssh.png)
+
+### 실습코드 다운로드
+  
+* Zip으로 다운받거나 `git clone` 수행
 
 ```bash
     git clone https://github.com/HakjunMIN/azure-petclinic.git
 ```
 
-#### 리파지토리 구성
+* 파이프라인은 새로 구성해야하기 때문에 `azure-pipeline.yml`은 삭제
+
+```bash
+    rm -rf azure-pipeline.yml
+```
+
+### 리파지토리 구성
 
 ```bash
     rm -rf .git
@@ -110,49 +144,37 @@
         1) `Kubernetes`을 선택후 Subsciption, Cluster, Namespace를 선택 후 생성
         2) `Docker Registry`를 선택 후 Azure Container Registry, Subscription, 레지스트리 선택후 생성 -->
 
-### CI/CD Pipelineing을 위한 Git Branch 전략
+## CI/CD Pipelineing을 위한 Git Branch 전략
 
 * GitHub Branch와 Git Branch 전략을 혼합하여 간결하지만 통제가 가능한 효율적인 Branch전략을 운영함.
 
-<img title="Git branch" alt="Git branch" src="img/gitbranch.png">
+![Git branch](img/gitbranch.png)
 
-* Main브랜치 기준으로 Feature 브랜치로 기능 개발. 계발계에 배포 필요할 경우 태깅으로 통제(ex: 1.0-SNAPSHOT1)
+* Main (혹은 Master) 브랜치 기준으로 Feature 브랜치로 기능 개발. 계발계에 배포 필요할 경우 태깅으로 통제(ex: 1.0-SNAPSHOT1)
 * Merge는 Pull Request(PR)로 리뷰 후 Merge할 수 있도록 강제
 * 릴리즈를 위해서는 Release브랜치 생성. Main에 Merge되지 않은 Feature브랜치는 Release에 PR후 Merge
 * RC버전 태깅(1.0-RC1)으로 Stage계 배포, RELEASE버전 태깅(1.0-RELEASE)으로 운영계 배포. 운영계 배포 후 Main에 Merge
 * CI/CD 파이프라인은 Commit/PR/Tagging별로 동적 파이프라인을 구성. 예를 들면 Commit 은 기본 CI만 작동되고 PR은 CI 전체, Tagging은 개발계 or Stage계 or 운영계 배포 CD가 Trigger될 수 있도록 구성
 
-### Azure Pipeline 구성
+## Azure Pipeline 구성
 
-#### 목표 CI/CD 파이프라인
+### 목표 CI/CD 파이프라인
 
-<img title="CI/CD" alt="CI/CD" src="img/goal-pipeline.png">
+!["CI/CD"](img/goal-pipeline.png)
 
-#### 초기 파이프라인 생성
+### 중요! 초기 파이프라인 생성
 
-* Pipelines - `Create Pipeline` - `Azure Repos Git` - <repository선택>
+* Azure DevOps - Pipelines - `Create Pipeline` - `Azure Repos Git` - <repository선택>
 * `Configure your pipeline` - `Deploy To Azure Kubernetes Service`
 
 클러스터, 네임스페이스, 컨테이너 레지스트리, 이미지 이름, 서비스 포트 지정
 
-* `azure-pipelines.yml`의 코드가 자동으로 생성됨
+* `azure-pipelines.yml`의 코드가 자동으로 생성되는데 실행은 하지 않고 저장만 해둠.
+* 이렇게 생성하면 `Environment`, 클러스터와 컨테이너 레지스트리 연결을 위한 `Service Connections`, 클러스터에서 사용할 레지스트리 접속 `secret`등을 한 번에 자동으로 만들어 줌.
 
-#### Azure KeyVault Task 추가
+### Trigger 부문 수정
 
-> 배포 시 각종 비밀 정보를 가져오기 위한 연결임.
-
-* `Show assistant`를 클릭하여 `Azure Key Vault`항목 추가
-
-* 앞에서 생성한 KeyVault정보 입력하고 `Add`
-
-#### Maven Task 및 SonarQube Task추가
-
-> SonarQube Task는 SonarQube를 OSS로 사용할 경우 Branch 별 분석이 안되므로 `mvn sonar:sonar` goal을 사용하는 것을 추천
-
-#### 완성된 파이프라인 코드 
-##### Trigger 부문
-
-* CI/CD 파이프라인을 1개의 코드로 관리. 코드로 분기하여 사용. 코드가 commit되면 무조건 실행 (CI/CD 포함)
+* CI/CD 파이프라인을 1개의 코드로 관리. 코드로 분기하여 사용. 코드가 commit되면 무조건 실행 (CI/CD 포함)되도록 `trigger`부분을 아래와 같이 변경함.
 
 ```yaml
 trigger:
@@ -162,30 +184,31 @@ trigger:
     branches:  
         include:
         - '*'
-resources:
-- repo: self
-
-variables:
-
-    # Container registry service connection established during pipeline creation
-    dockerRegistryServiceConnection: 
-    imageRepository:
-    containerRegistry: 
-    dockerfilePath: '**/Dockerfile'
-    tag: '$(Build.BuildId)'
-    imagePullSecret: 
-    # Maven Caching
-    MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
-    MAVEN_OPTS: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
-    # Agent VM image name
-    vmImageName: 'ubuntu-latest'
 ```
 
-##### CI (Build 부문)
+### Azure KeyVault Task 추가
+
+* CI/CD 시 각종 secret 정보를 가져오기 위해 KeyVault연결이 필요함.
+* Azure DevOps - Pipelines - 파이프라인 이름 - `⁝`를 선택하여 Edit실행  
+* Build Stage - jobs - job - steps - task에 커서 위치를 두고 `Show assistant`를 클릭하여 `Azure Key Vault`항목 추가
+* `Azure Subsciption`, `KeyVault` 항목을 입력하고 `Add`
+
+### Maven Task 및 SonarQube Task추가
+
+> SonarQube Task는 SonarQube를 OSS로 사용할 경우 Branch 별 분석이 안되므로 `mvn sonar:sonar` goal을 사용하는 것을 추천
+
+
+
+### CI (Build 부문)
 
 * Maven Test, Build, Docker Build 및 배포를 수행하나 Commit과 Tagging에 따라 어느 Job까지 실행될 것인지 `condition`을 통해 정의
+* Azure KeyVault Task를 이용하여 CI에 필요한 비밀정보 획득 (여기선 SonarQube정보). 상세방법은 [여기](https://docs.microsoft.com/ko-kr/azure/devops/pipelines/release/key-vault-in-own-project?view=azure-devops&tabs=portal)서 참고
+* Azure KeyVault의 `액세스 정책`에서 `AzureSubscription`에 설정된 Service Principal id에 권한을 설정해줘야함. 
+  * Azure DevOps - Project Settings - Service Connections - AzureSubscription 정보 - `Manage Service Principal` 에서 Service Principal (애플리케이션ID) 확인
+  * 사용중인 KeyVault - `액세스 정책` - Create - 사용권한 (Get, List), Principal ID (어플리케이션ID)를 설정
 * Maven repository를 재활용하기 위해 Cache Task활용
-* SonarQube는 `mvn sonar:sonar` 형태로 Maven Goal로 실행
+* Maven Package실행 시 테스트 자동화 코드 실행을 위해 Postgres 접속정보를 KeyVault에서 가져와 옵션으로 넣어줘야 함.
+
 
 ```yaml
 stages:
@@ -228,16 +251,8 @@ stages:
         mavenOptions: '$(MAVEN_OPTS)'
         mavenAuthenticateFeed: false
         effectivePomSkip: false
-        options: '-DPOSTGRES_URL=$(postgres-url) -DPOSTGRES_USER=$(postgres-user) -DPOSTGRES_PASS=$(postgres-pass)'
+        options: '-DPOSTGRES_URL=$(postgres-url) -DPOSTGRES_USER=$(postgres-user) -DPOSTGRES_PASS=$(postgres-pass)' ## For INT-TEST
         goals: "-B package"
-    
-    - task: Maven@3
-        displayName: Static Analysis on SonarQube
-        inputs:     
-        mavenPomFile: 'Application/pom.xml'
-        mavenOptions: '$(MAVEN_OPTS)'
-        goals: "-B sonar:sonar"
-        options: "-Dsonar.projectKey=azure-spring -Dsonar.host.url=$(sonar-url) -Dsonar.login=$(sonar-token)"
     
     - task: Docker@2
         displayName: Build and push an image to container registry
@@ -255,7 +270,95 @@ stages:
         artifact: manifests
 ```
 
-##### CD (Deploy) 부문
+### CI 파이프라인 내 정적 점검 추가
+
+* Cluster에 SonarQube 설치
+> 적절한 Kubernetes Cluster 연결 설정이 되어있어야 함. [여기](https://docs.microsoft.com/ko-kr/azure/aks/kubernetes-walkthrough#connect-to-the-cluster) 참고
+
+```bash
+    helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
+    helm upgrade --install -n sonarqube sonarqube sonarqube/sonarqube --set service.type=LoadBalancer
+```
+> 상용버전의 [SonarCloud](https://sonarcloud.io/) 사용시 AzurePipeline의 SonarQube용 Task(Run Code Analysis)를 사용할 수 있으나 OSS버전의 SonarQube사용 시 멀티 브랜치 분석을 할 수 없으므로 Maven의 Goal로 실행.
+
+* SonarQube는 `mvn sonar:sonar` 형태로 Maven Goal로 실행.
+* `options`에 프로젝트키, SonarQube URL, Token등을 입력 (아래 yaml)
+  
+```yaml
+    - task: Maven@3
+        displayName: Static Analysis on SonarQube
+        inputs:     
+        mavenPomFile: 'Application/pom.xml'
+        mavenOptions: '$(MAVEN_OPTS)'
+        goals: "-B sonar:sonar"
+        options: "-Dsonar.projectKey=azure-spring -Dsonar.host.url=$(sonar-url) -Dsonar.login=$(sonar-token)"
+```
+
+### CD (Deploy) 부문
+
+* Deploy Stage를 별도로 구성하여 CI, CD Stage를 분리함.
+
+#### AKS 설정
+
+* KeyVault의 Secret을 사용하기 위해 [Kubernetes CSI(Container Storage Interface)](https://kubernetes-csi.github.io/docs/)를 사용함
+* AKS에서 CSI와 Managed ID를 활성화 시킴
+
+```bash
+    az aks enable-addons -a azure-keyvault-secrets-provider -n <aks-name> -g <resource-group>
+    az aks update -n <aks-name> -g <resource-group> --enable-managed-identity
+```
+* 클러스터에 `--enable-managed-identity`를 활성화하면 아래와 같이 objectId (Managed ID)를 얻을 수 있음.
+```
+ "identity": {
+        "clientId": "90e35a2c-3a2e-495a-88a6-9ca1cd5d710a",
+        "objectId": "668c37cb-ee54-44bf-bc42-03e420240b5d",
+        "resourceId": "/subscriptions/2f2d6dff-65ac-45fc-9180-bad1e786a763/resourcegroups/~~~~"
+     }
+```
+
+* KeyVault 서비스에 secret permission을 위 AKS managed ID에 할당함
+  
+```bash
+    az keyvault set-policy -n <your-keyvault> --secret-permissions get --object-id 668c37cb-ee54-44bf-bc42-03e420240b5d
+```
+
+* CSI Manifest 파일 [secretproviderclass](manifests/secretproviderclass.yml)을 수정.
+  * `userAssignedIdentityID`에 위 Managed ID의 `clientId`를 입력
+  * `tenantID`: 계정의 TenantID 입력 
+    > `az account list` 로 확인
+
+    ```yaml
+    (생략)
+    ...
+    parameters:
+    usePodIdentity: "false"
+    useVMManagedIdentity: "true"
+    userAssignedIdentityID: "90e35a2c-3a2e-495a-88a6-9ca1cd5d710a"
+    keyvaultName: "andy-cert-keyvault"
+    cloudName: ""
+    objects:  |
+        array:
+        - |
+            objectName: postgres-url
+            objectType: secret                     
+            objectVersion: ""                    
+        - |
+            objectName: postgres-user
+            objectType: secret
+            objectVersion: ""
+        - |
+            objectName: postgres-pass
+            objectType: secret
+            objectVersion: "" 
+    tenantId: "<your-tenant-id>"
+    ```
+
+#### CD 파이프라인 작성
+
+* Azure DevOps Pipeline Editor를 실행하여
+
+
+#### Deploy시 승인 과정 추가
 
 * Stage계와 Production계로 구분한 후 `environment`정의. environment별 리소스 (여기선 Kubernetes Resourcef)를 정의하고 다음과 같은 체크 항목을 정의할 수 있음.
 
@@ -264,7 +367,6 @@ stages:
 | Approval | Deploy전 특정 사용자(그룹)에게 승인을 받아야함. |
 | Branch Control  | 특정 브랜치에서만 배포가 되도록 구성 |
 | Businees Hours  | 특정시간에만 배포가 가능하도록 설정 |
-
 
 > 이 프로젝트에서는 Approval기능만 사용함. Branch Control은 파이프라인 코드 내 `condition`으로 통제
 
@@ -342,7 +444,7 @@ stages:
                     $(containerRegistry)/$(imageRepository):$(tag)           
 
 ```
-> Branch 조건은 ` contains(variables['build.sourceBranch'], 'RELEASE')`와 같이 통제하고 Stage는 `RC`, `RELEASE`, Production은 `RELEASE` Tagging시에만 Triggering되도록 구성.
+
+> Branch 조건은 `contains(variables['build.sourceBranch'], 'RELEASE')`와 같이 통제하고 Stage는 `RC`, `RELEASE`, Production은 `RELEASE` Tagging시에만 Triggering되도록 구성.
 
 #### 전체 [`azure-pipeline`](azure-pipelines.yml) 샘플 참고
-
