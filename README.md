@@ -139,11 +139,6 @@
     git push -u origin master
 ```
 
-<!-- * Pipeline에서 생성할 Azure service connection설정
-    * `Project Settings` - `Service Connections` 에서 신규 생성
-        1) `Kubernetes`을 선택후 Subsciption, Cluster, Namespace를 선택 후 생성
-        2) `Docker Registry`를 선택 후 Azure Container Registry, Subscription, 레지스트리 선택후 생성 -->
-
 ## CI/CD Pipelineing을 위한 Git Branch 전략
 
 * GitHub Branch와 Git Branch 전략을 혼합하여 간결하지만 통제가 가능한 효율적인 Branch전략을 운영함.
@@ -188,58 +183,53 @@ trigger:
 
 ### Azure KeyVault Task 추가
 
-* CI/CD 시 각종 secret 정보를 가져오기 위해 KeyVault연결이 필요함.
+* Azure KeyVault Task를 이용하여 CI에 필요한 Secret정보를 획득해야 함. (ex: SonarQube정보). 상세방법은 [여기](https://docs.microsoft.com/ko-kr/azure/devops/pipelines/release/key-vault-in-own-project?view=azure-devops&tabs=portal)서 참고
 * Azure DevOps - Pipelines - 파이프라인 이름 - `⁝`를 선택하여 Edit실행  
-* Build Stage - jobs - job - steps - task에 커서 위치를 두고 `Show assistant`를 클릭하여 `Azure Key Vault`항목 추가
+* Build Stage - jobs - job - steps - task에 가장 앞부분에 커서 위치를 두고 `Show assistant`를 클릭하여 `Azure Key Vault`항목 추가
 * `Azure Subsciption`, `KeyVault` 항목을 입력하고 `Add`
 
-### Maven Task 및 SonarQube Task추가
+```yaml
+...
+    - task: AzureKeyVault@2
+      inputs:
+        azureSubscription: '<서비스 연결명>'
+        KeyVaultName: '<Your-keyvault>'
+        SecretsFilter: '*'
+        RunAsPreJob: false
 
-> SonarQube Task는 SonarQube를 OSS로 사용할 경우 Branch 별 분석이 안되므로 `mvn sonar:sonar` goal을 사용하는 것을 추천
+```
+* Azure Potal - 사용중인 Azure KeyVault의 `액세스 정책`에서 `AzureSubscription`에 설정된 Service Principal id에 권한을 설정해줘야함.
+* Azure DevOps - Project Settings - Service Connections - AzureSubscription 정보 - `Manage Service Principal` 에서 Service Principal (애플리케이션ID) 확인
+* 사용중인 KeyVault - `액세스 정책` - Create - 사용권한 (Get, List), Principal ID (어플리케이션ID)를 설정
 
-
-
-### CI (Build 부문)
+### CI 파이프라인 기본 빌드 추가
 
 * Maven Test, Build, Docker Build 및 배포를 수행하나 Commit과 Tagging에 따라 어느 Job까지 실행될 것인지 `condition`을 통해 정의
-* Azure KeyVault Task를 이용하여 CI에 필요한 비밀정보 획득 (여기선 SonarQube정보). 상세방법은 [여기](https://docs.microsoft.com/ko-kr/azure/devops/pipelines/release/key-vault-in-own-project?view=azure-devops&tabs=portal)서 참고
-* Azure KeyVault의 `액세스 정책`에서 `AzureSubscription`에 설정된 Service Principal id에 권한을 설정해줘야함. 
-  * Azure DevOps - Project Settings - Service Connections - AzureSubscription 정보 - `Manage Service Principal` 에서 Service Principal (애플리케이션ID) 확인
-  * 사용중인 KeyVault - `액세스 정책` - Create - 사용권한 (Get, List), Principal ID (어플리케이션ID)를 설정
-* Maven repository를 재활용하기 위해 Cache Task활용
-* Maven Package실행 시 테스트 자동화 코드 실행을 위해 Postgres 접속정보를 KeyVault에서 가져와 옵션으로 넣어줘야 함.
-
+* Maven repository를 재활용하기 위해 Cache Task를 활용하고 필요한 변수를 아래와 같이 입력.
 
 ```yaml
-stages:
-- stage: Build
-    displayName: Build stage
-    jobs:
-    - job: Build
-    displayName: Build
-    pool:
-        vmImage: $(vmImageName)
-        
-    steps:
-    - task: AzureKeyVault@1
-        inputs:
-        azureSubscription: 
-        KeyVaultName:
-        SecretsFilter: 'postgres-url, postgres-user, postgres-pass, sonar-url, sonar-token'           
-        RunAsPreJob: false             
+variables:
+  # Maven Caching
+  MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
+  MAVEN_OPTS: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+```
 
+* Maven Package실행 시 테스트 자동화 코드 실행을 위해 Postgres 접속정보를 KeyVault에서 가져와 옵션으로 넣어줘야 함.
+* 완성된 Cache와 Maven Task는 아래와 같음.
+
+```yaml
     - task: Cache@2
-        displayName: Cache Maven local repo  
-        inputs:
+      displayName: Cache Maven local repo  
+      inputs:
         key: 'maven | "$(Agent.OS)" | **/pom.xml'
         restoreKeys: |
-            maven | "$(Agent.OS)"
-            maven
+          maven | "$(Agent.OS)"
+          maven
         path: $(MAVEN_CACHE_FOLDER) 
 
     - task: Maven@3
-        displayName: Maven Build
-        inputs:
+      displayName: Maven Build
+      inputs:
         mavenPomFile: 'Application/pom.xml'
         publishJUnitResults: true
         codeCoverageTool: 'jacoco'
@@ -251,28 +241,20 @@ stages:
         mavenOptions: '$(MAVEN_OPTS)'
         mavenAuthenticateFeed: false
         effectivePomSkip: false
-        options: '-DPOSTGRES_URL=$(postgres-url) -DPOSTGRES_USER=$(postgres-user) -DPOSTGRES_PASS=$(postgres-pass)' ## For INT-TEST
+        options: '-DPOSTGRES_URL=$(postgres-url) -DPOSTGRES_USER=$(postgres-user) -DPOSTGRES_PASS=$(postgres-pass)'
         goals: "-B package"
-    
-    - task: Docker@2
-        displayName: Build and push an image to container registry
-        condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variables['build.sourceBranch'], 'RELEASE'))
-        inputs:
-        command: buildAndPush
-        repository: $(imageRepository)
-        dockerfile: $(dockerfilePath)
-        containerRegistry: $(dockerRegistryServiceConnection)
-        tags: |
-            $(tag)
+```
 
-    - upload: manifests
-        condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variables['build.sourceBranch'], 'RELEASE'))
-        artifact: manifests
+* Docker 빌드 배포 Task와 upload manifests Task, Deploy Stage는 `RC`, `RELEASE` Tagging시에만 작동하도록 아래의 조건 추가
+
+```yaml
+condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variables['build.sourceBranch'], 'RELEASE'))
 ```
 
 ### CI 파이프라인 내 정적 점검 추가
 
 * Cluster에 SonarQube 설치
+
 > 적절한 Kubernetes Cluster 연결 설정이 되어있어야 함. [여기](https://docs.microsoft.com/ko-kr/azure/aks/kubernetes-walkthrough#connect-to-the-cluster) 참고
 
 ```bash
@@ -286,12 +268,13 @@ stages:
   
 ```yaml
     - task: Maven@3
-        displayName: Static Analysis on SonarQube
-        inputs:     
+      displayName: Static Analysis on SonarQube
+      inputs:     
         mavenPomFile: 'Application/pom.xml'
         mavenOptions: '$(MAVEN_OPTS)'
         goals: "-B sonar:sonar"
         options: "-Dsonar.projectKey=azure-spring -Dsonar.host.url=$(sonar-url) -Dsonar.login=$(sonar-token)"
+    
 ```
 
 ### CD (Deploy) 부문
