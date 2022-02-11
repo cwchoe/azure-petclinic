@@ -6,9 +6,11 @@
 
     > Petclinic의 Microservice Architecture 버전은 [링크](https://github.com/euchungmsft/spring-petclinic-microservices) 참고)
 
+
 ## 필요 도구
 
 * Azure 구독
+* GitHub 계정
 * [Git client](https://git-scm.com/downloads)
 * [Azure Cli](https://docs.microsoft.com/ko-kr/cli/azure/install-azure-cli)
 * [kubectl](https://kubernetes.io/ko/docs/tasks/tools/install-kubectl-linux/)
@@ -32,7 +34,7 @@
 ## 구성 시나리오 요약
 
 1. Azure DevOps 보드 생성
-2. DevOps Starter로 원클릭 구성
+2. DevOps Starter로 원클릭 구성 (Azure Pipeline or GitHub Action)
    * 한번에 K8S, Repo, Pipeline, 샘플 PJT, 모니터링 등 기본환경 구성
 3. CI파이프라인 강화
     * SonarQube로 테스트 결과, 정적점검 결과 수집
@@ -157,14 +159,14 @@
 
 !["CI/CD"](img/goal-pipeline.png)
 
-### 중요! 초기 파이프라인 생성
+### 초기 파이프라인 생성 자동화
 
 * Azure DevOps - Pipelines - `Create Pipeline` - `Azure Repos Git` - <repository선택>
 * `Configure your pipeline` - `Deploy To Azure Kubernetes Service`
 
 클러스터, 네임스페이스, 컨테이너 레지스트리, 이미지 이름, 서비스 포트 지정
 
-* `azure-pipelines.yml`의 코드가 자동으로 생성되는데 실행은 하지 않고 저장만 해둠.
+* `azure-pipelines.yml`의 코드가 자동으로 생성되는데 **실행은 하지 않고 저장**만 해둠.
 * 이렇게 생성하면 `Environment`, 클러스터와 컨테이너 레지스트리 연결을 위한 `Service Connections`, 클러스터에서 사용할 레지스트리 접속 `secret`등을 한 번에 자동으로 만들어 줌.
 
 ### Trigger 부문 수정
@@ -173,12 +175,12 @@
 
 ```yaml
 trigger:
-    tags:
-        include:
-        - '*'
-    branches:  
-        include:
-        - '*'
+  tags:
+    include:
+      - '*'
+  branches:  
+    include:
+      - '*'
 ```
 
 ### Azure KeyVault Task 추가
@@ -307,7 +309,7 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
 
 * CSI Manifest 파일 [secretproviderclass](manifests/secretproviderclass.yml)을 수정.
   * `userAssignedIdentityID`에 위 Managed ID의 `clientId`를 입력
-  * `tenantID`: 계정의 TenantID 입력 
+  * `tenantID`: 계정의 TenantID 입력
     > `az account list` 로 확인
 
     ```yaml
@@ -317,29 +319,55 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
     usePodIdentity: "false"
     useVMManagedIdentity: "true"
     userAssignedIdentityID: "90e35a2c-3a2e-495a-88a6-9ca1cd5d710a"
-    keyvaultName: "andy-cert-keyvault"
+    keyvaultName: "<your-keyvault>"
     cloudName: ""
     objects:  |
-        array:
+      array:
         - |
-            objectName: postgres-url
-            objectType: secret                     
-            objectVersion: ""                    
+          objectName: postgres-url
+          objectType: secret                     
+          objectVersion: ""                    
         - |
-            objectName: postgres-user
-            objectType: secret
-            objectVersion: ""
+          objectName: postgres-user
+          objectType: secret
+          objectVersion: ""
         - |
-            objectName: postgres-pass
-            objectType: secret
-            objectVersion: "" 
+          objectName: postgres-pass
+          objectType: secret
+          objectVersion: "" 
     tenantId: "<your-tenant-id>"
     ```
 
+* Deployment Manifest 파일([deployment.yml](manifests/deployment.yml))에 Image정보 수정
+  
+    ```yaml
+    (중략)
+    spec:
+    ..
+        spec:
+        containers:
+            - name: azurespring 
+            image: <your-registry>/azurespring
+    ```
+
+#### 배포 Environment 구성
+
+* [초기 파이프라인 자동화 과정](#초기-파이프라인-생성-자동화)을 거쳐 생성된 Deploy Stage는 자동으로 1개의 Environment가 생성되어 있음
+* Azure DevOps - Pipelines - Environments 내에서 확인
+* Stage계와 Production계 배포를 위한 Envrionment를 각각 생성하고 배포 리소스(Cluster, Namespace)를 선택.
+  
+    | Environment | Resource (Cluster.Namespace) |
+    | -- | -- |
+    | Stage | `<your-cluster>.<stage용 namespace>`|
+    | Production | `<your-cluster>.<production용 namespace>`|
+
+    > 실제 현업에서 Production용으로 구축 시엔 Dev계와 Stage계를 1개의 `non-prod` Cluster로 생성하여 Namespace로 구분하고 Production은 별도의 `prod` Cluster로 구성하는 것을 권고.
+
 #### CD 파이프라인 작성
 
-* Azure DevOps Pipeline Editor를 실행하여
-
+* Azure DevOps Pipeline Editor를 실행하여 기 생성된 배포 파이프라인을 Stage 배포 Stage와 Production 배포 Stage를 별도로 구성
+    
+    > Stage용어가 동일하여 혼란스러우나 배포의 [`Stage계`](https://en.wikipedia.org/wiki/Deployment_environment#Staging)는 운영환경과 유사한 테스트환경이라고 보면되고 [`Pipeline Stage`](https://docs.microsoft.com/ko-kr/azure/devops/pipelines/process/stages?view=azure-devops&tabs=yaml)는 작업의 최상단 그룹임.
 
 #### Deploy시 승인 과정 추가
 
@@ -353,81 +381,89 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
 
 > 이 프로젝트에서는 Approval기능만 사용함. Branch Control은 파이프라인 코드 내 `condition`으로 통제
 
-* CD 샘플 파이프라인 코드
+#### CD 샘플 파이프라인 코드
+
+* `condition`추가: Branch 조건은 `contains(variables['build.sourceBranch'], 'RELEASE')`와 같이 통제하고 Stage는 `RC`, `RELEASE`, Production은 `RELEASE` Tagging시에만 Triggering되도록 구성.
+* `secretproviderclass` manifest 추가: KeyVault를 사용하기 위한 CSI
+* 최종 완성된 샘플 파이프라인 코드는 아래와 유사.
 
 ```yaml
 - stage: Deploy
-    displayName: Deploy stage
-    dependsOn: Build
-    condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variables['build.sourceBranch'], 'RELEASE'))
+  displayName: Deploy stage
+  dependsOn: Build
+  condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variables['build.sourceBranch'], 'RELEASE'))
 
-    jobs:
-    - deployment: Deploy
-        displayName: Deploy
-        pool:
-        vmImage: $(vmImageName)
-        environment: 'stage.staged48e'
-        strategy:
-        runOnce:
-            deploy:
-            steps:
-            - task: KubernetesManifest@0
-                displayName: Create imagePullSecret
-                inputs:
-                action: createSecret
-                secretName: $(imagePullSecret)
-                dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
+  jobs:
+  - deployment: Deploy
+    displayName: Deploy
+    pool:
+      vmImage: $(vmImageName)
+    environment: 'stage.staged48e'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: KubernetesManifest@0
+            displayName: Create imagePullSecret
+            inputs:
+              action: createSecret
+              secretName: $(imagePullSecret)
+              dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
 
-            - task: KubernetesManifest@0
-                displayName: Deploy to Kubernetes cluster
-                inputs:
-                action: deploy
-                manifests: |
-                    $(Pipeline.Workspace)/manifests/deployment.yml
-                    $(Pipeline.Workspace)/manifests/secretproviderclass.yml
-                    $(Pipeline.Workspace)/manifests/service.yml
-                imagePullSecrets: |
-                    $(imagePullSecret)
-                containers: |
-                    $(containerRegistry)/$(imageRepository):$(tag)
+          - task: KubernetesManifest@0
+            displayName: Deploy to Kubernetes cluster
+            inputs:
+              action: deploy
+              manifests: |
+                $(Pipeline.Workspace)/manifests/deployment.yml
+                $(Pipeline.Workspace)/manifests/secretproviderclass.yml
+                $(Pipeline.Workspace)/manifests/service.yml
+              imagePullSecrets: |
+                $(imagePullSecret)
+              containers: |
+                $(containerRegistry)/$(imageRepository):$(tag)
 
-    - stage: Deploy_prod
-    displayName: Deploy production
-    dependsOn: Build
-    condition: contains(variables['build.sourceBranch'], 'RELEASE')
+- stage: Deploy_prod
+  displayName: Deploy production
+  dependsOn: Build
+  condition: contains(variables['build.sourceBranch'], 'RELEASE')
 
-    jobs:
-    - deployment: Deploy
-        displayName: Deploy
-        pool:
-        vmImage: $(vmImageName)
-        environment: 'prod.prodd82'
-        strategy:
-        runOnce:
-            deploy:
-            steps:
-            - task: KubernetesManifest@0
-                displayName: Create imagePullSecret
-                inputs:
-                action: createSecret
-                secretName: $(imagePullSecret)
-                dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
+  jobs:
+  - deployment: Deploy
+    displayName: Deploy
+    pool:
+      vmImage: $(vmImageName)
+    environment: 'prod.prodd82'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: KubernetesManifest@0
+            displayName: Create imagePullSecret
+            inputs:
+              action: createSecret
+              secretName: $(imagePullSecret)
+              dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
 
-            - task: KubernetesManifest@0
-                displayName: Deploy to Kubernetes cluster
-                inputs:
-                action: deploy
-                manifests: |
-                    $(Pipeline.Workspace)/manifests/deployment.yml
-                    $(Pipeline.Workspace)/manifests/secretproviderclass.yml
-                    $(Pipeline.Workspace)/manifests/service.yml
-                imagePullSecrets: |
-                    $(imagePullSecret)
-                containers: |
-                    $(containerRegistry)/$(imageRepository):$(tag)           
-
+          - task: KubernetesManifest@0
+            displayName: Deploy to Kubernetes cluster
+            inputs:
+              action: deploy
+              manifests: |
+                $(Pipeline.Workspace)/manifests/deployment.yml
+                $(Pipeline.Workspace)/manifests/secretproviderclass.yml
+                $(Pipeline.Workspace)/manifests/service.yml
+              imagePullSecrets: |
+                $(imagePullSecret)
+              containers: |
+                $(containerRegistry)/$(imageRepository):$(tag)                
+         
 ```
 
-> Branch 조건은 `contains(variables['build.sourceBranch'], 'RELEASE')`와 같이 통제하고 Stage는 `RC`, `RELEASE`, Production은 `RELEASE` Tagging시에만 Triggering되도록 구성.
-
 #### 전체 [`azure-pipeline`](azure-pipelines.yml) 샘플 참고
+
+### 참고 링크
+
+* https://docs.microsoft.com/ko-kr/azure/devops/?view=azure-devops
+* https://docs.microsoft.com/ko-kr/azure/devops/pipelines/?view=azure-devops
+* https://docs.microsoft.com/ko-kr/azure/devops/pipelines/process/environments-kubernetes?view=azure-devops
