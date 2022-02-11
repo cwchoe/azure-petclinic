@@ -34,7 +34,7 @@
 ## 구성 시나리오 요약
 
 1. Azure DevOps 보드 생성
-2. DevOps Starter로 원클릭 구성 (Azure Pipeline or GitHub Action)
+2. DevOps Starter로 원클릭 구성 (Azure Pipeline,  GitHub Action)
    * 한번에 K8S, Repo, Pipeline, 샘플 PJT, 모니터링 등 기본환경 구성
 3. CI파이프라인 강화
     * SonarQube로 테스트 결과, 정적점검 결과 수집
@@ -338,7 +338,7 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
     tenantId: "<your-tenant-id>"
     ```
 
-* Deployment Manifest 파일([deployment.yml](manifests/deployment.yml))에 Image정보 수정
+* Deployment Manifest 파일([deployment.yml](manifests/deployment.yml))에 Image정보 수정, Application Insight 사용시 `APPINSIGHTS_INSTRUMENTATIONKEY` 할당
   
     ```yaml
     (중략)
@@ -347,8 +347,14 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
         spec:
         containers:
             - name: azurespring 
-            image: <your-registry>/azurespring
+              image: <your-registry>/azurespring
+    ..
+              env:
+              - name: APPINSIGHTS_INSTRUMENTATIONKEY
+                value: " <your-applicationInsights-InstrumentationKey>"   
     ```
+
+  * Applicatin Insight 사용
 
 #### 배포 Environment 구성
 

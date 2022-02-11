@@ -6,3 +6,4 @@ ENV POSTGRES_PASS=
 
 COPY ./target/*.jar /app.jar
 ENTRYPOINT ["java","-jar","/app.jar"]
+# ENTRYPOINT ["java", "-Dspring.profiles.active=h2", "-jar", "/app.jar"]

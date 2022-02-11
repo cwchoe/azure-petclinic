@@ -22,6 +22,8 @@ spec:
             mountPath: "/mnt/secrets-store"
             readOnly: true
           env:
+           - name: APPINSIGHTS_INSTRUMENTATIONKEY
+             value: ""
           - name: POSTGRES_URL
             valueFrom:
               secretKeyRef:
