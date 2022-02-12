@@ -108,9 +108,14 @@
 
 > 생성 후 연결문자열, ID, 패스워드 등을 KeyVault로 관리 예정
 
-## Database생성
+* Database생성
 
-`create database petclinic`
+  ```sql
+  CREATE DATABASE petclinic;
+  ```
+* Azure PostgreSQL 연결 보안 완화 - 퍼브릭 액세스, 방화벽규칙, Azure서비스 방문 허용 
+
+![연결보안](img/postgres-security.png)
 
 ## Azure KeyVault 생성
 
