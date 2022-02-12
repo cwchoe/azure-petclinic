@@ -108,6 +108,10 @@
 
 > 생성 후 연결문자열, ID, 패스워드 등을 KeyVault로 관리 예정
 
+## Database생성
+
+`create database petclinic`
+
 ## Azure KeyVault 생성
 
 * 이 [문서](https://docs.microsoft.com/ko-kr/azure/key-vault/general/quick-create-portal)를 참고하여 서비스 생성
@@ -116,11 +120,11 @@
   * `postgres-pass`, `postgres-url`, `postgres-user`
 
 ```bash
-    az keyvault secret set --vault-name <your-keyvault> --name prod-postgres-url --value "jdbc:postgresql://<your-postgres-name>.postgres.database.azure.com/petclinic?sslmode=verify-full&&sslfactory=org.postgresql.ssl.SingleCertValidatingFactory&sslfactoryarg=classpath:BaltimoreCyberTrustRoot.crt.pem"
+    az keyvault secret set --vault-name <your-keyvault> --name postgres-url --value "jdbc:postgresql://<your-postgres-name>.postgres.database.azure.com/petclinic?sslmode=verify-full&&sslfactory=org.postgresql.ssl.SingleCertValidatingFactory&sslfactoryarg=classpath:BaltimoreCyberTrustRoot.crt.pem"
 
-    az keyvault secret set --vault-name <your-keyvault> --name prod-postgres-user --value <user>@<your-postgres-name>
+    az keyvault secret set --vault-name <your-keyvault> --name postgres-user --value <user>@<your-postgres-name>
 
-    az keyvault secret set --vault-name <your-keyvault> --name prod-postgres-pass --value <password>
+    az keyvault secret set --vault-name <your-keyvault> --name postgres-pass --value <password>
 ```
 
 ## Azure DevOps 프로젝트 구성
@@ -350,6 +354,19 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
           objectVersion: "" 
     tenantId: "<your-tenant-id>"
     ```
+* [secretproviderclass](manifests/secretproviderclass.yml)파일의 수정이 완료되면 Pipeline yaml 파일 내 Kubernetes Manifest파일에 추가해야 함.
+
+```yaml
+         - task: KubernetesManifest@0
+            displayName: Deploy to Kubernetes cluster
+            inputs:
+              action: deploy
+              manifests: |
+                $(Pipeline.Workspace)/manifests/deployment.yml
+                $(Pipeline.Workspace)/manifests/secretproviderclass.yml
+                $(Pipeline.Workspace)/manifests/service.yml
+            
+```
 
 * Deployment Manifest 파일([deployment.yml](manifests/deployment.yml))에 Image정보 수정, Application Insight 사용시 아래의 `APPINSIGHTS_INSTRUMENTATIONKEY` 할당
 * PostgreSQL 사용 시 아래 `SPRING_PROFILES_ACTIVE`에 `postgres`로 할당. [`application-postgres.properties`](Application/src/main/resources/application-postgres.properties)을 참고하게됨.
@@ -369,6 +386,7 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
             - name: SPRING_PROFILES_ACTIVE
               value: ""   
     ```
+
 #### 배포 Environment 구성
 
 * [초기 파이프라인 자동화 과정](#초기-파이프라인-생성-자동화)을 거쳐 생성된 Deploy Stage는 자동으로 1개의 Environment가 생성되어 있음
