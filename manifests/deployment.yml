@@ -22,8 +22,10 @@ spec:
             mountPath: "/mnt/secrets-store"
             readOnly: true
           env:
-           - name: APPINSIGHTS_INSTRUMENTATIONKEY
-             value: ""
+          - name: APPINSIGHTS_INSTRUMENTATIONKEY
+            value: ""
+          - name: SPRING_PROFILES_ACTIVE
+            value: "h2"  
           - name: POSTGRES_URL
             valueFrom:
               secretKeyRef:
