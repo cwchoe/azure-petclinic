@@ -181,6 +181,8 @@
 
 !["CI/CD"](img/goal-pipeline.png)
 
+> 실제 파이프라인 구성 시 CI파이프라인과 CD파이프라인은 분리하여 구성하는 것이 권장됨.
+
 ### 초기 파이프라인 생성 자동화
 
 * Azure DevOps - Pipelines - `Create Pipeline` - `Azure Repos Git` - <repository선택>
