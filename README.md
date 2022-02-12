@@ -18,12 +18,11 @@
 
 * Code리파지토리, Kubernetes 클러스터, 컨테이너 레지스트리, CI/CD 파이프라인, 애플리케이션 인사이트 (APM), 샘플코드 까지 자동으로 한 번에 생성됨.
 
-1. Azure DevOps
+1. DevOps Starter for Azure DevOps
 ![Azure DevOps](img/wholeset-devopsstarter.png)
 
-2. GitHub Action
+2. DevOps Starter for GitHub Action
 ![GitHub Action](img/wholeset-devopsstarter2.png)
-
 
 ## Intermediate Hands-on 개요
 
@@ -92,9 +91,8 @@
     * 백로그 (사용자스토리) 스프린트 할당
 4. 스프린트 착수
     * 스토리 포인트 산정
-    * 코드 링킹
-
-
+    * 코드 Linking
+5. Board 관리 및 분석
 
 ## Git 설정
 
@@ -102,13 +100,13 @@
 
 * Git ssh 공개키 생성: https://git-scm.com/book/ko/v2/Git-%EC%84%9C%EB%B2%84-SSH-%EA%B3%B5%EA%B0%9C%ED%82%A4-%EB%A7%8C%EB%93%A4%EA%B8%B0
 
-## Azure Postgres 배포
+## Azure Database for PostgreSQL 배포
 
 * 어플리케이션에서 사용할 DBMS 배포.
 
-    [![](img/deploy-to-azure.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fazure-quickstart-templates%2Fmaster%2Fquickstarts%2Fmicrosoft.dbforpostgresql%2Fmanaged-postgresql-with-vnet%2Fazuredeploy.json)
+* Azure Portal을 통해 Azure Database for PostgreSQL 생성: https://docs.microsoft.com/ko-kr/azure/postgresql/quickstart-create-server-database-portal
 
-* 생성 후 연결문자열, ID, 패스워드 등을 KeyVault로 관리 예정
+> 생성 후 연결문자열, ID, 패스워드 등을 KeyVault로 관리 예정
 
 ## Azure KeyVault 생성
 
@@ -353,7 +351,8 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
     tenantId: "<your-tenant-id>"
     ```
 
-* Deployment Manifest 파일([deployment.yml](manifests/deployment.yml))에 Image정보 수정, Application Insight 사용시 `APPINSIGHTS_INSTRUMENTATIONKEY` 할당
+* Deployment Manifest 파일([deployment.yml](manifests/deployment.yml))에 Image정보 수정, Application Insight 사용시 아래의 `APPINSIGHTS_INSTRUMENTATIONKEY` 할당
+* PostgreSQL 사용 시 아래 `SPRING_PROFILES_ACTIVE`에 `postgres`로 할당. [`application-postgres.properties`](Application/src/main/resources/application-postgres.properties)을 참고하게됨.
   
     ```yaml
     (중략)
@@ -361,16 +360,15 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
     ..
         spec:
         containers:
-            - name: azurespring 
-              image: <your-registry>/azurespring
+          - name: azurespring 
+            image: <your-registry>/azurespring
     ..
-              env:
-              - name: APPINSIGHTS_INSTRUMENTATIONKEY
-                value: " <your-applicationInsights-InstrumentationKey>"   
+            env:
+            - name: APPINSIGHTS_INSTRUMENTATIONKEY
+              value: "<your-applicationInsights-InstrumentationKey>"   
+            - name: SPRING_PROFILES_ACTIVE
+              value: ""   
     ```
-
-  * Applicatin Insight 사용
-
 #### 배포 Environment 구성
 
 * [초기 파이프라인 자동화 과정](#초기-파이프라인-생성-자동화)을 거쳐 생성된 Deploy Stage는 자동으로 1개의 Environment가 생성되어 있음

@@ -14,37 +14,37 @@ spec:
     spec:
       containers:
         - name: azurespring 
-          image: azurespringacr.azurecr.io/azurespring
+          image: springsampleacr.azurecr.io/exec
           ports:
           - containerPort: 80
-          volumeMounts:
-          - name: secrets-store01-inline
-            mountPath: "/mnt/secrets-store"
-            readOnly: true
+          # volumeMounts:
+          # - name: secrets-store01-inline
+          #   mountPath: "/mnt/secrets-store"
+          #   readOnly: true
           env:
           - name: APPINSIGHTS_INSTRUMENTATIONKEY
             value: ""
           - name: SPRING_PROFILES_ACTIVE
-            value: "h2"  
-          - name: POSTGRES_URL
-            valueFrom:
-              secretKeyRef:
-                name: dbsecret
-                key: postgres-url
-          - name: POSTGRES_USER
-            valueFrom:
-              secretKeyRef:
-                name: dbsecret
-                key: postgres-user 
-          - name: POSTGRES_PASS
-            valueFrom:
-              secretKeyRef:
-                name: dbsecret
-                key: postgres-pass
-      volumes:
-      - name: secrets-store01-inline
-        csi:
-          driver: secrets-store.csi.k8s.io
-          readOnly: true
-          volumeAttributes:
-            secretProviderClass: "azure-keys"          
+            value: ""  
+          # - name: POSTGRES_URL
+          #   valueFrom:
+          #     secretKeyRef:
+          #       name: dbsecret
+          #       key: postgres-url
+          # - name: POSTGRES_USER
+          #   valueFrom:
+          #     secretKeyRef:
+          #       name: dbsecret
+          #       key: postgres-user 
+          # - name: POSTGRES_PASS
+          #   valueFrom:
+          #     secretKeyRef:
+          #       name: dbsecret
+          #       key: postgres-pass
+      # volumes:
+      # - name: secrets-store01-inline
+      #   csi:
+      #     driver: secrets-store.csi.k8s.io
+      #     readOnly: true
+      #     volumeAttributes:
+      #       secretProviderClass: "azure-keys"          
