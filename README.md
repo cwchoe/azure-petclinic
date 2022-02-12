@@ -510,6 +510,184 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
 * https://docs.microsoft.com/ko-kr/azure/devops/pipelines/?view=azure-devops
 * https://docs.microsoft.com/ko-kr/azure/devops/pipelines/process/environments-kubernetes?view=azure-devops
 
-## GitHub Action
+**모든 Hands-on이 완료되면 사용하지 않는 리소스는 정리**
 
+# GitHub Action
 
+## Environment생성
+
+```yaml
+
+name: Build and Deploy to AKS
+on: push
+
+env:
+  RESOURCEGROUPNAME: ""
+  LOCATION: "Korea Central"
+  SUBSCRIPTIONID: ""
+  IMAGENAME: ""
+  REGISTRYSKU: "Standard"
+  REGISTRYNAME: ""
+  REGISTRYLOCATION: ""
+  CLUSTERNAME: ""
+  APPINSIGHTSLOCATION: "Korea Central"
+  CLUSTERLOCATION: "Korea Central"
+  AGENTCOUNT: ""
+  AGENTVMSIZE: ""
+  KUBERNETESVERSION: 
+  OMSLOCATION: "Korea Central"
+  OMSWORKSPACENAME: ""
+  HTTPSAPPLICATIONROUTINGENABLED: false
+  KUBERNETESAPI: "apps/v1"
+  NAMESPACE: ""
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: build and test
+      id: build-test
+      run: |
+          cd Application
+          ./mvnw compile test 
+
+  code-analysis:
+    name: Static analysis for code quality
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: package
+      id: build-test
+      run: |
+          cd Application
+          ./mvnw package 
+    - name: Official SonarQube Scan
+      # You may pin to the exact commit or the version.
+      # uses: SonarSource/sonarqube-scan-action@069e3332cbefb8659c02d77b21a04719d3ef7c9b
+      uses: SonarSource/sonarqube-scan-action@v1.0.0
+      with:
+        # Additional arguments to the sonar-scanner
+        args: # optional
+        # Set the sonar.projectBaseDir analysis property
+        projectBaseDir: Application    
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}         
+                  
+  publish:
+    name: Publish to container registry
+    if: contains (github.ref, 'RC') || contains (github.ref, 'RELEASE')
+    runs-on: ubuntu-latest
+    needs: [build, code-analysis]
+    steps:
+    - uses: actions/checkout@v2
+    - name: pacakge war
+      run: |
+          cd Application
+          ./mvnw package
+    # login to azure
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Get ACR credentials
+      id: getACRCred
+      run: |
+           echo "::set-output name=acr_username::`az acr credential show -n ${{ env.REGISTRYNAME }} --query username | xargs`"
+           echo "::set-output name=acr_password::`az acr credential show -n ${{ env.REGISTRYNAME }} --query passwords[0].value | xargs`"
+           echo "::add-mask::`az acr credential show -n ${{ env.REGISTRYNAME }} --query passwords[0].value | xargs`"
+    
+    - name: Build and push image to ACR
+      id: build-image
+      run: |
+        echo "::add-mask::${{ steps.getACRCred.outputs.acr_password }}"
+        docker login ${{ env.REGISTRYNAME }}.azurecr.io --username ${{ steps.getACRCred.outputs.acr_username }} --password ${{ steps.getACRCred.outputs.acr_password }}
+        docker build "$GITHUB_WORKSPACE/Application" -f  "Application/Dockerfile" -t ${{ env.REGISTRYNAME }}.azurecr.io/${{ env.IMAGENAME }}:${{ github.sha }}
+        docker push ${{ env.REGISTRYNAME }}.azurecr.io/${{ env.IMAGENAME }}:${{ github.sha }}
+ 
+  deploy-stage:
+    name: Deploy application to stage AKS 
+    if: contains (github.ref, 'RC')
+    environment:
+      name: stage-environment
+    needs: publish
+    runs-on: ubuntu-latest
+    # if: contains(github.head_ref, 'feature') || contains(github.head_ref, 'release')
+    steps:
+    - uses: actions/checkout@v2
+
+    # login to azure
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Get AKS Credentials
+      id: getContext
+      run: |
+          az aks get-credentials --resource-group ${{ env.RESOURCEGROUPNAME }} --name ${{ env.CLUSTERNAME }} --file $GITHUB_WORKSPACE/kubeconfig
+          echo "KUBECONFIG=$GITHUB_WORKSPACE/kubeconfig" >> $GITHUB_ENV
+
+    - name: Create namespace
+      run: |
+        namespacePresent=`kubectl get namespace | grep ${{ env.NAMESPACE }} | wc -l`
+        if [ $namespacePresent -eq 0 ]
+        then
+            echo `kubectl create namespace ${{ env.NAMESPACE }}`
+        fi
+
+    - name: Get ACR credentials
+      id: getACRCred
+      run: |
+           echo "::set-output name=acr_username::`az acr credential show -n ${{ env.REGISTRYNAME }} --query username | xargs`"
+           echo "::set-output name=acr_password::`az acr credential show -n ${{ env.REGISTRYNAME }} --query passwords[0].value | xargs`"
+           echo "::add-mask::`az acr credential show -n ${{ env.REGISTRYNAME }} --query passwords[0].value | xargs`"
+
+    - uses: azure/k8s-create-secret@v1
+      with:
+        namespace: ${{ env.NAMESPACE }}
+        container-registry-url: ${{ env.REGISTRYNAME }}.azurecr.io
+        container-registry-username: ${{ steps.getACRCred.outputs.acr_username }}
+        container-registry-password: ${{ steps.getACRCred.outputs.acr_password }}
+        secret-name: ${{ env.CLUSTERNAME }}dockerauth
+
+    - name: Fetch Application insights key
+      id: GetAppInsightsKey
+      run: |
+        echo "::set-output name=AIKey::`az resource show -g ${{ env.RESOURCEGROUPNAME }} -n ${{ env.CLUSTERNAME }} --resource-type "Microsoft.Insights/components" --query "properties.InstrumentationKey" -o tsv`"
+        echo "::add-mask::`az resource show -g ${{ env.RESOURCEGROUPNAME }} -n ${{ env.CLUSTERNAME }} --resource-type "Microsoft.Insights/components" --query "properties.InstrumentationKey" -o tsv`"
+
+    - uses: azure/k8s-bake@v1
+      id: bakeManifests
+      with:
+        renderEngine: 'helm'
+        helmChart: './Application/charts/sampleapp' 
+        overrideFiles: './Application/charts/sampleapp/values.yaml'
+        overrides: |
+            image.repository:${{ env.REGISTRYNAME }}.azurecr.io/${{ env.IMAGENAME }}
+            image.tag:${{ github.sha }}
+            imagePullSecrets:{${{ env.CLUSTERNAME }}dockerauth}
+            applicationInsights.InstrumentationKey:${{ steps.GetAppInsightsKey.outputs.AIKey }}
+            apiVersion:${{ env.KUBERNETESAPI }}
+            extensionApiVersion:${{ env.KUBERNETESAPI }}
+        helm-version: 'latest' 
+        silent: 'true'
+
+    - uses: azure/k8s-deploy@v1
+      with:
+        namespace: ${{ env.NAMESPACE }}
+        manifests: ${{ steps.bakeManifests.outputs.manifestsBundle }}
+        images: |
+          ${{ env.REGISTRYNAME }}.azurecr.io/${{ env.IMAGENAME }}:${{ github.sha }}
+        imagepullsecrets: |
+          ${{ env.CLUSTERNAME }}dockerauth
+
+    - name : Cleanup
+      run: | 
+        az logout
+        rm -rf $GITHUB_WORKSPACE/kubeconfig
+
+```

@@ -2,24 +2,24 @@ name: Build and Deploy to AKS
 on: push
 
 env:
-  RESOURCEGROUPNAME: "spring-sample-rg"
+  RESOURCEGROUPNAME: ""
   LOCATION: "Korea Central"
-  SUBSCRIPTIONID: "2f2d6dff-65ac-45fc-9180-bad1e786a763"
-  IMAGENAME: "springsampleee0b"
+  SUBSCRIPTIONID: ""
+  IMAGENAME: ""
   REGISTRYSKU: "Standard"
-  REGISTRYNAME: "springsampleacr"
-  REGISTRYLOCATION: "South Central US"
-  CLUSTERNAME: "spring-sample"
+  REGISTRYNAME: ""
+  REGISTRYLOCATION: ""
+  CLUSTERNAME: ""
   APPINSIGHTSLOCATION: "Korea Central"
   CLUSTERLOCATION: "Korea Central"
-  AGENTCOUNT: "3"
-  AGENTVMSIZE: "Standard_DS2_v2"
-  KUBERNETESVERSION: 1.19.11
+  AGENTCOUNT: ""
+  AGENTVMSIZE: ""
+  KUBERNETESVERSION: 
   OMSLOCATION: "Korea Central"
-  OMSWORKSPACENAME: "springsample6293"
+  OMSWORKSPACENAME: ""
   HTTPSAPPLICATIONROUTINGENABLED: false
   KUBERNETESAPI: "apps/v1"
-  NAMESPACE: "springsample236b"
+  NAMESPACE: ""
 
 jobs:
   build:
