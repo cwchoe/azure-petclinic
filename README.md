@@ -1,11 +1,42 @@
 # Azure DevOps Hands-on
 
-## Hands-on 특징
+## DevOps Starter로 원클릭 구성
+
+* 참고문서: <https://docs.microsoft.com/ko-kr/azure/devops-project/overview>
+
+## DevOps Starter에서 `create`로 신규 프로젝트를 생성
+
+* 랭귀지 선택 전 아래 그림과 같이 나오는 `here`링크를 통해 `Azure DevOps`와 `GitHub Action`중 하나를 선택할 수 있음.
+
+    !["선택지"](img/img1.png)
+
+> GitHub Action vs Azure DevOps?
+> <https://docs.microsoft.com/ko-kr/dotnet/architecture/devops-for-aspnet-developers/actions-vs-pipelines>
+
+* Language: `JAVA`, Framework: `Spring`, Service: `Kubernetes Service` 선택
+* Project name, Azure DevOps 조직, Kubernetes 신규 생성, 로케이션 Korea Central로 선택하여 생성.
+
+* Code리파지토리, Kubernetes 클러스터, 컨테이너 레지스트리, CI/CD 파이프라인, 애플리케이션 인사이트 (APM), 샘플코드 까지 자동으로 한 번에 생성됨.
+
+1. Azure DevOps
+![Azure DevOps](img/wholeset-devopsstarter.png)
+
+2. GitHub Action
+![GitHub Action](img/wholeset-devopsstarter2.png)
+
+
+## Intermediate Hands-on 개요
 
 * 단일 Spring Boot Project, [Spring Petclinic](https://github.com/spring-projects/spring-petclinic)로 Azure의 기본적인 리소스를 사용하며 Azure DevOps를 이용한 프로덕션에 필요한 기본적인 CI/CD pipelining을 구성함.
 
     > Petclinic의 Microservice Architecture 버전은 [링크](https://github.com/euchungmsft/spring-petclinic-microservices) 참고)
 
+* 주요 특징
+  * Pipeline 파일은 코드로 관리
+  * CI와 CD 스테이지를 분리하고 승인 과정 생성
+  * 정적 분석 및 수집 도구를 이용하여 테스트 결과 및 정적점검 현황 확인
+  * Persistence는 별도의 Azure PaaS를 사용
+  * Connection String등의 Secret정보들은 KeyVault를 통해 안전하게 중앙 집중 관리
 
 ## 필요 도구
 
@@ -28,7 +59,6 @@
 * Spring Boot 프로젝트
 * SonarQube
 * GitHub Action or Azure Pipeline for CI/CD Pipeline
-  * Azure Pipeline은 Code 방식 사용 (Classic X)
 * Code Repository (GitHub or Azure Git Repo)
 
 ## 구성 시나리오 요약
@@ -64,22 +94,7 @@
     * 스토리 포인트 산정
     * 코드 링킹
 
-## Step by Step - DevOps Starter with Azure DevOps
 
-> 참고문서: <https://docs.microsoft.com/ko-kr/azure/devops-project/overview>
-
-## DevOps Starter에서 `create`로 신규 프로젝트를 생성
-
-* 랭귀지 선택 전 아래 그림과 같이 나오는 `here`링크를 통해 `Azure DevOps`와 `GitHub Action`중 하나를 선택할 수 있음.
-
-    !["선택지"](img/img1.png)
-
-> GitHub Action vs Azure DevOps?
-> <https://docs.microsoft.com/ko-kr/dotnet/architecture/devops-for-aspnet-developers/actions-vs-pipelines>
-
-* `Azure DevOps`선택
-* Language: `JAVA`, Framework: `Spring`, Service: `Kubernetes Service` 선택
-* Project name, Azure DevOps 조직, Kubernetes 신규 생성, 로케이션 Korea Central로 선택하여 생성.
 
 ## Git 설정
 
