@@ -415,6 +415,7 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
           objectVersion: "" 
     tenantId: "<your-tenant-id>"
     ```
+
 * [secretproviderclass](manifests/secretproviderclass.yml)파일의 수정이 완료되면 Pipeline yaml 파일 내 Kubernetes Manifest파일에 추가해야 함.
 
 ```yaml
@@ -585,7 +586,7 @@ git push --tags
 * https://docs.microsoft.com/ko-kr/azure/devops/pipelines/?view=azure-devops
 * https://docs.microsoft.com/ko-kr/azure/devops/pipelines/process/environments-kubernetes?view=azure-devops
 
-** 모든 Hands-on이 완료되면 사용하지 않는 리소스는 정리 **
+**모든 Hands-on이 완료되면 사용하지 않는 리소스는 정리**
 
 # GitHub Action
 
@@ -595,7 +596,9 @@ git push --tags
 
 > KeyVault와 Azure Database for PostgreSQL부문은 생략함.
 
-> 환경 설정 자동화를 위해 DevOps Starter를 사용하여 구성할 것을 추천. 아래 가이드는 수작업 생성 과정임.
+> Azure Pipeline으로 실습한 코드로 테스트를 GitHub Action을 테스트하려면 기존 git `remote`를 끊고 GitHub에 리파지토리 연결([여기](#리파지토리-구성) 참고)
+
+> 환경 설정 자동화를 위해 DevOps Starter를 사용하여 구성할 수 있음. 아래 가이드는 수작업 생성 과정임.
 
 ## Environment생성
 
@@ -613,7 +616,7 @@ az ad sp create-for-rbac --name "myApp" --role contributor \
 
 ### Workflow 작성
 
-* 완성된 yaml파일은  `.github/workflows/devops-starter-workflow.yml` 참고
+* 완성된 yaml파일은  [`.github/workflows/devops-starter-workflow.yml`](.github/workflows/devops-starter-workflow.yml) 참고
 
 * 환경변수 입력
 
