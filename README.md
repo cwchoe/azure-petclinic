@@ -26,7 +26,7 @@
 
 ## Hands-on 개요
 
-* 단일 Spring Boot Project, [Spring Petclinic](https://github.com/spring-projects/spring-petclinic)로 Azure의 기본적인 리소스를 사용하며 Azure DevOps를 이용한 프로덕션에 필요한 기본적인 CI/CD pipelining을 구성함.
+* 단일 Spring Boot Project, [Springs Petclinic](https://github.com/spring-projects/spring-petclinic)로 Azure의 기본적인 리소스를 사용하며 Azure DevOps를 이용한 프로덕션에 필요한 기본적인 CI/CD pipelining을 구성함.
 
     > Petclinic의 Microservice Architecture 버전은 [링크](https://github.com/euchungmsft/spring-petclinic-microservices) 참고)
 
@@ -144,6 +144,7 @@
 ### Azure DevOps에서 ssh 공개키 등록
 
 !["Git설정"](img/gitssh.png)
+> 단, http방식으로 연결할 경우 이 설정은 필요없음. 편의성을 위해 ssh사용 권고.
 
 ### 실습코드 다운로드
   
@@ -422,7 +423,7 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
         spec:
         containers:
           - name: azurespring 
-            image: <your-registry>/azurespring
+            image: <your-registry>/<your-image>
     ..
             env:
             - name: APPINSIGHTS_INSTRUMENTATIONKEY
