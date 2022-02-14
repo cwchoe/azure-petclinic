@@ -1,3 +1,4 @@
+![CI](https://github.com/HakjunMIN/skr-sample/actions/workflows/devops-starter-workflow.yml/badge.svg)
 [![Bugs](http://52.141.21.192:9000/api/project_badges/measure?project=azure-spring&metric=bugs&token=52b2322994d4e2e90ede6bb68d6d8584a3992bd7)](http://52.141.21.192:9000/dashboard?id=azure-spring) [![Coverage](http://52.141.21.192:9000/api/project_badges/measure?project=azure-spring&metric=coverage&token=52b2322994d4e2e90ede6bb68d6d8584a3992bd7)](http://52.141.21.192:9000/dashboard?id=azure-spring) [![Code Smells](http://52.141.21.192:9000/api/project_badges/measure?project=azure-spring&metric=code_smells&token=52b2322994d4e2e90ede6bb68d6d8584a3992bd7)](http://52.141.21.192:9000/dashboard?id=azure-spring) [![Vulnerabilities](http://52.141.21.192:9000/api/project_badges/measure?project=azure-spring&metric=vulnerabilities&token=52b2322994d4e2e90ede6bb68d6d8584a3992bd7)](http://52.141.21.192:9000/dashboard?id=azure-spring)
 
 # Azure DevOps Hands-on
@@ -662,7 +663,7 @@ jobs:
       id: build-test
       run: |
           cd Application
-          ./mvnw -B compile test
+          ./mvnw -B verify jacoco:report-aggregate
 
     # 한번 다운로드 받은 라이브러리는 Caching
     - name: Save Maven cache
@@ -712,7 +713,7 @@ jobs:
       uses: skjolber/maven-cache-github-action@v1
       with:
         step: restore      
-    - name: pacakge war
+    - name: pacakge 
       run: |
           cd Application
           ./mvnw -B package -Dmaven.test.skip=true
