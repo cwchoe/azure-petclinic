@@ -1,3 +1,5 @@
+[![Bugs](http://52.141.21.192:9000/api/project_badges/measure?project=azure-spring&metric=bugs&token=52b2322994d4e2e90ede6bb68d6d8584a3992bd7)](http://52.141.21.192:9000/dashboard?id=azure-spring) [![Coverage](http://52.141.21.192:9000/api/project_badges/measure?project=azure-spring&metric=coverage&token=52b2322994d4e2e90ede6bb68d6d8584a3992bd7)](http://52.141.21.192:9000/dashboard?id=azure-spring) [![Code Smells](http://52.141.21.192:9000/api/project_badges/measure?project=azure-spring&metric=code_smells&token=52b2322994d4e2e90ede6bb68d6d8584a3992bd7)](http://52.141.21.192:9000/dashboard?id=azure-spring) [![Vulnerabilities](http://52.141.21.192:9000/api/project_badges/measure?project=azure-spring&metric=vulnerabilities&token=52b2322994d4e2e90ede6bb68d6d8584a3992bd7)](http://52.141.21.192:9000/dashboard?id=azure-spring)
+
 # Azure DevOps Hands-on
 
 ## 주요 목차
@@ -844,5 +846,6 @@ jobs:
 ### GitHub Action 참고자료
 
 * 개요: https://docs.microsoft.com/ko-kr/azure/developer/github/github-actions
+* GitHub Action 문서: https://docs.github.com/en/actions
 * Azure Board연결: https://docs.microsoft.com/ko-kr/azure/devops/boards/github/?view=azure-devops
 * Azure KeyVault사용: https://docs.microsoft.com/ko-kr/azure/developer/github/github-key-vault
