@@ -592,7 +592,7 @@ git push --tags
 
 > KeyVault와 Azure Database for PostgreSQL부문은 생략함. 필요시 [이 문서](https://docs.microsoft.com/ko-kr/azure/developer/github/github-key-vault)를 참고하여 구성.
 
-> Azure Pipeline으로 실습한 코드로 테스트를 GitHub Action을 테스트하려면 기존 git `remote`를 끊고 GitHub에 리파지토리 연결([여기](#리파지토리-구성) 참고)
+* 샘플 코드는 https://github.com/HakjunMIN/azure-petclinic 에서 개인 리파지토리로 Fork하거나 Clone후 [여기](#리파지토리-구성)의 방법으로 개인 라파지토리에 재연결
 
 > 환경 설정 자동화를 위해 DevOps Starter를 사용하여 구성할 수 있으나 항목 별 이해를 돕기 위해 수작으로 아래와 같이 작성.
 
