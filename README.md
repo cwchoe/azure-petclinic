@@ -542,6 +542,25 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
          
 ```
 
+### 파이프라인 테스트
+
+#### CI 테스트
+
+```bash
+#코드 변경 후 
+git commit -am "change something"
+git push
+```
+
+#### CD 테스트
+
+```bash
+#코드 변경 후 
+git commit -am "change something"
+git tag 0.0.1-RC1
+git push --tags
+```
+
 #### 전체 [`azure-pipeline`](azure-pipelines.yml) 샘플 참고
 
 ### 참고 링크
@@ -560,80 +579,91 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
 
 > KeyVault와 Azure Database for PostgreSQL부문은 생략함.
 
-> 환경설정자동화를 위해 DevOps Starter를 사용하여 구성할 것을 추천. 아래 가이드는 수작업 생성 과정임.
+> 환경 설정 자동화를 위해 DevOps Starter를 사용하여 구성할 것을 추천. 아래 가이드는 수작업 생성 과정임.
 
 ## Environment생성
 
-### 초기 Workflow생성
+### Service Princaipal 생성
 
 * GitHub Action에서 사용할 Service Principal 생성
-```
+
+```yaml
 az ad sp create-for-rbac --name "myApp" --role contributor \
                             --scopes /subscriptions/{subscription-id}/resourceGroups/{resource-group} \
                             --sdk-auth
-```                            
-* Output json을 리파지토리 메뉴 Settings - Secret - Actions - New repository secret에 `AZURE_CREDENTIALS` 항목으로 입력
+```
 
-* Actions - New workflow 선택 - Deployment - `Deploy to a AKS Cluster` - `Configure`
-  
-* 아래 항목을 Settings - Envrionment - New environment에 각각 입력
-  - AZURE_CONTAINER_REGISTRY (name of your container registry)
-  - PROJECT_NAME
-  - RESOURCE_GROUP (where your cluster is deployed)
-  - CLUSTER_NAME (name of your AKS cluster)
+* 위 결과로 나온 Output json을 GitHub리파지토리 메뉴 Settings - Secret - Actions - New repository secret에 `AZURE_CREDENTIALS` 항목으로 입력
 
+### Workflow 작성
 
+* 완성된 yaml파일은  `.github/workflows/devops-starter-workflow.yml` 참고
+
+* 환경변수 입력
 
 ```yaml
-
 name: Build and Deploy to AKS
 on: push
 
 env:
-  RESOURCEGROUPNAME: ""
+  RESOURCEGROUPNAME: "" # your resource group
   LOCATION: "Korea Central"
-  SUBSCRIPTIONID: ""
-  IMAGENAME: ""
+  SUBSCRIPTIONID: "" # your subsctiption id
+  IMAGENAME: "" # your project name
   REGISTRYSKU: "Standard"
-  REGISTRYNAME: ""
-  REGISTRYLOCATION: ""
-  CLUSTERNAME: ""
+  REGISTRYNAME: "" # your registry name ex)azurespringacr
+  REGISTRYLOCATION: "" # registry location ex)South Central US
+  CLUSTERNAME: "" # your cluster
   APPINSIGHTSLOCATION: "Korea Central"
   CLUSTERLOCATION: "Korea Central"
-  AGENTCOUNT: ""
-  AGENTVMSIZE: ""
-  KUBERNETESVERSION: 
+
   OMSLOCATION: "Korea Central"
-  OMSWORKSPACENAME: ""
+  OMSWORKSPACENAME: "" # log analytics 작업역역
   HTTPSAPPLICATIONROUTINGENABLED: false
   KUBERNETESAPI: "apps/v1"
-  NAMESPACE: ""
+  NAMESPACE: "" # 클러스터 내 Namespace ex)stage
+```
 
+* CI 부문 생성
+
+```yaml
 jobs:
   build:
-    name: Build and test
+    name: Build and Static analysis
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: build and test
-      id: build-test
-      run: |
-          cd Application
-          ./mvnw compile test 
+    - name: Set up JDK 11
+      uses: actions/setup-java@v1
+      with:
+        java-version: 11
 
-  code-analysis:
-    name: Static analysis for code quality
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
+    # 빠른 실행을 위해 Maven repository를 Caching하여 사용    
+    - name: Restore Maven cache
+      uses: skjolber/maven-cache-github-action@v1
+      with:
+        step: restore    
     - name: package
       id: build-test
       run: |
           cd Application
-          ./mvnw package 
+          ./mvnw -B compile test
+
+    # 한번 다운로드 받은 라이브러리는 Caching
+    - name: Save Maven cache
+      uses: skjolber/maven-cache-github-action@v1
+      with:
+        step: save       
+
+```
+
+* 정적분석을 위한 SonarQube를 수행. Secret항목 내 `SONAR_TOKEN`과 `SONAR_URL`을 미리 설정 (Github 리파지토리 - Settings - Sercret - Actions - New repository secret)
+
+* SonarQube용 Task추가
+  
+```yaml
     - name: Official SonarQube Scan
-      # You may pin to the exact commit or the version.
-      # uses: SonarSource/sonarqube-scan-action@069e3332cbefb8659c02d77b21a04719d3ef7c9b
+     
       uses: SonarSource/sonarqube-scan-action@v1.0.0
       with:
         # Additional arguments to the sonar-scanner
@@ -642,23 +672,37 @@ jobs:
         projectBaseDir: Application    
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}         
-                  
+        SONAR_HOST_URL: ${{ secrets.SONAR_URL }}         
+```
+
+* Registry 배포
+
+`if: contains (github.ref, 'RC') || contains (github.ref, 'RELEASE')` 로 `RC`,`RELEASE` Tagging시에만 수행
+
+```yaml
   publish:
     name: Publish to container registry
     if: contains (github.ref, 'RC') || contains (github.ref, 'RELEASE')
     runs-on: ubuntu-latest
-    needs: [build, code-analysis]
+    needs: build
     steps:
     - uses: actions/checkout@v2
+    - name: Set up JDK 11
+      uses: actions/setup-java@v1
+      with:
+        java-version: 11
+    - name: Restore Maven cache
+      uses: skjolber/maven-cache-github-action@v1
+      with:
+        step: restore      
     - name: pacakge war
       run: |
           cd Application
-          ./mvnw package
+          ./mvnw -B package -Dmaven.test.skip=true
     # login to azure
     - name: Login to Azure
       uses: azure/login@v1
-      with:
+      with: 
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: Get ACR credentials
@@ -675,7 +719,11 @@ jobs:
         docker login ${{ env.REGISTRYNAME }}.azurecr.io --username ${{ steps.getACRCred.outputs.acr_username }} --password ${{ steps.getACRCred.outputs.acr_password }}
         docker build "$GITHUB_WORKSPACE/Application" -f  "Application/Dockerfile" -t ${{ env.REGISTRYNAME }}.azurecr.io/${{ env.IMAGENAME }}:${{ github.sha }}
         docker push ${{ env.REGISTRYNAME }}.azurecr.io/${{ env.IMAGENAME }}:${{ github.sha }}
- 
+ ```
+
+* Kubernetes Cluster배포 Stage작성
+
+```yaml
   deploy-stage:
     name: Deploy application to stage AKS 
     if: contains (github.ref, 'RC')
@@ -683,10 +731,8 @@ jobs:
       name: stage-environment
     needs: publish
     runs-on: ubuntu-latest
-    # if: contains(github.head_ref, 'feature') || contains(github.head_ref, 'release')
     steps:
     - uses: actions/checkout@v2
-
     # login to azure
     - name: Login to Azure
       uses: azure/login@v1
@@ -759,3 +805,13 @@ jobs:
         rm -rf $GITHUB_WORKSPACE/kubeconfig
 
 ```
+
+* Deploy 과정 시 승인과정 추가
+
+  * GitHub 리파지토리 - Settings - Environments - 이미 생성된 `stage-environment` 선택.
+  * Required reviewers 체크박스 선택후 이름 지정, Save protection rules 클릭.
+  * Deploy 시 다음과 같이 승인자가 승인할 수 있음
+
+![배포승인](img/gha-approve.png)
+
+* 테스트: [Azure Pipeline과 동일](#파이프라인-테스트)
