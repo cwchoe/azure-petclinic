@@ -32,6 +32,7 @@
 
 * 주요 특징
   * Pipeline 파일은 코드로 관리
+  * 별도의 GitOps Tool없이 GitOps환경 구성
   * CI와 CD 스테이지를 분리하고 승인 과정 생성
   * 정적 분석 및 수집 도구를 이용하여 테스트 결과 및 정적점검 현황 확인
   * Persistence는 별도의 Azure PaaS를 사용
@@ -309,9 +310,12 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
 > 상용버전의 [SonarCloud](https://sonarcloud.io/) 사용시 AzurePipeline의 SonarQube용 Task(Run Code Analysis)를 사용할 수 있으나 OSS버전의 SonarQube사용 시 멀티 브랜치 분석을 할 수 없으므로 Maven의 Goal로 실행.
 
 * SonarQube설치가 완료되면 `sonar-url`과 `sonar-token`을 KeyVault에 secret으로 생성.
+  * sonar token은 메뉴 Administration - Security - Adminstrator admin - Token에서 생성
+  
+  ![sonarqube toeken](img/sonar-token.png)
 
 ```bash
-    az keyvault secret set --vault-name <your-keyvault> --name sonar-url --value "http://<sonar>"
+    az keyvault secret set --vault-name <your-keyvault> --name sonar-url --value "http://<sonar-host>:9000"
 
     az keyvault secret set --vault-name <your-keyvault> --name sonar-token --value <sonar-token>
 ```
@@ -660,6 +664,8 @@ jobs:
 * 정적분석을 위한 SonarQube를 수행. Secret항목 내 `SONAR_TOKEN`과 `SONAR_URL`을 미리 설정 (Github 리파지토리 - Settings - Sercret - Actions - New repository secret)
 
 * SonarQube용 Task추가
+
+> SonarQube정보는 [위 문서 참고](#ci-파이프라인-내-정적-점검-추가)
   
 ```yaml
     - name: Official SonarQube Scan
