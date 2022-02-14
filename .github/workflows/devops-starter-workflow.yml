@@ -37,7 +37,7 @@ jobs:
       id: build-test
       run: |
           cd Application
-          ./mvnw -B verify jacoco:report-aggregate
+          ./mvnw -B verify
 
     - name: Save Maven cache
       uses: skjolber/maven-cache-github-action@v1
