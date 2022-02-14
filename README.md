@@ -2,17 +2,17 @@
 
 ## 주요 목차
 
-1. [DevOps Starter](#devops-starter로-원클릭-구성)
+1. [Quick start with DevOps Starter](#devops-starter로-원클릭-구성)
 2. [Hand-on 개요](#hands-on-개요)
 3. [Azure DevOps 구성](#azure-devops-조직-구성)
 4. [필요환경 구성](#git-설정)
 5. [목표 CI/CD 파이프라인 전략](#cicd-pipelineing을-위한-git-branch-전략)
 6. [Azure Pipeline](#azure-pipeline-구성)
 7. [GitHub Action](#github-action)
-
+8. [참고자료](#참고자료)
 ---
 
-## DevOps Starter로 원클릭 구성
+## Quick Start with DevOps Starter
 
 * 참고문서: <https://docs.microsoft.com/ko-kr/azure/devops-project/overview>
 
@@ -580,27 +580,21 @@ git push --tags
 
 #### 전체 [`azure-pipeline`](azure-pipelines.yml) 샘플 참고
 
-### 참고 링크
-
-* https://docs.microsoft.com/ko-kr/azure/devops/?view=azure-devops
-* https://docs.microsoft.com/ko-kr/azure/devops/pipelines/?view=azure-devops
-* https://docs.microsoft.com/ko-kr/azure/devops/pipelines/process/environments-kubernetes?view=azure-devops
-
 **모든 Hands-on이 완료되면 사용하지 않는 리소스는 정리**
 
-# GitHub Action
+---
+
+## GitHub Action
 
 * GitHub Action의 완성된 파이프라인은 Azure pipeline과 같이 정적점검과 환경 별 승인과정을 사용함.
 
 ![github action](img/gta-goal.png)
 
-> KeyVault와 Azure Database for PostgreSQL부문은 생략함.
+> KeyVault와 Azure Database for PostgreSQL부문은 생략함. 필요시 [이 문서](https://docs.microsoft.com/ko-kr/azure/developer/github/github-key-vault)를 참고하여 구성.
 
 > Azure Pipeline으로 실습한 코드로 테스트를 GitHub Action을 테스트하려면 기존 git `remote`를 끊고 GitHub에 리파지토리 연결([여기](#리파지토리-구성) 참고)
 
-> 환경 설정 자동화를 위해 DevOps Starter를 사용하여 구성할 수 있음. 아래 가이드는 수작업 생성 과정임.
-
-## Environment생성
+> 환경 설정 자동화를 위해 DevOps Starter를 사용하여 구성할 수 있으나 항목 별 이해를 돕기 위해 수작으로 아래와 같이 작성.
 
 ### Service Princaipal 생성
 
@@ -614,11 +608,11 @@ az ad sp create-for-rbac --name "myApp" --role contributor \
 
 * 위 결과로 나온 Output json을 GitHub리파지토리 메뉴 Settings - Secret - Actions - New repository secret에 `AZURE_CREDENTIALS` 항목으로 입력
 
-### Workflow 작성
+## Workflow 작성
 
 * 완성된 yaml파일은  [`.github/workflows/devops-starter-workflow.yml`](.github/workflows/devops-starter-workflow.yml) 참고
 
-* 환경변수 입력
+### 환경변수 입력
 
 ```yaml
 name: Build and Deploy to AKS
@@ -643,7 +637,7 @@ env:
   NAMESPACE: "" # 클러스터 내 Namespace ex)stage
 ```
 
-* CI 부문 생성
+### CI 부문 생성
 
 ```yaml
 jobs:
@@ -676,9 +670,9 @@ jobs:
 
 ```
 
-* 정적분석을 위한 SonarQube를 수행. Secret항목 내 `SONAR_TOKEN`과 `SONAR_URL`을 미리 설정 (Github 리파지토리 - Settings - Sercret - Actions - New repository secret)
+### SonarQube용 Task추가
 
-* SonarQube용 Task추가
+* 정적분석을 위한 SonarQube를 수행. Secret항목 내 `SONAR_TOKEN`과 `SONAR_URL`을 미리 설정 (Github 리파지토리 - Settings - Sercret - Actions - New repository secret)
 
 > SonarQube정보는 [위 문서 참고](#ci-파이프라인-내-정적-점검-추가)
   
@@ -696,7 +690,7 @@ jobs:
         SONAR_HOST_URL: ${{ secrets.SONAR_URL }}         
 ```
 
-* Registry 배포
+### Registry 배포
 
 `if: contains (github.ref, 'RC') || contains (github.ref, 'RELEASE')` 로 `RC`,`RELEASE` Tagging시에만 수행
 
@@ -742,7 +736,7 @@ jobs:
         docker push ${{ env.REGISTRYNAME }}.azurecr.io/${{ env.IMAGENAME }}:${{ github.sha }}
  ```
 
-* Kubernetes Cluster배포 Stage작성
+### Kubernetes Cluster배포 작성
 
 ```yaml
   deploy-stage:
@@ -827,12 +821,28 @@ jobs:
 
 ```
 
-* Deploy 과정 시 승인과정 추가
+### Deploy 과정 시 승인과정 추가
 
-  * GitHub 리파지토리 - Settings - Environments - 이미 생성된 `stage-environment` 선택.
-  * Required reviewers 체크박스 선택후 이름 지정, Save protection rules 클릭.
-  * Deploy 시 다음과 같이 승인자가 승인할 수 있음
+* GitHub 리파지토리 - Settings - Environments - 이미 생성된 `stage-environment` 선택.
+* Required reviewers 체크박스 선택후 이름 지정, Save protection rules 클릭.
+* Deploy 시 다음과 같이 승인자가 승인할 수 있음
 
 ![배포승인](img/gha-approve.png)
 
-* 테스트: [Azure Pipeline과 동일](#파이프라인-테스트)
+## 테스트
+
+### [Azure Pipeline과 동일](#파이프라인-테스트)
+
+## 참고자료
+
+### Azure Pipeline 참고자료
+
+* https://docs.microsoft.com/ko-kr/azure/devops/?view=azure-devops
+* https://docs.microsoft.com/ko-kr/azure/devops/pipelines/?view=azure-devops
+* https://docs.microsoft.com/ko-kr/azure/devops/pipelines/process/environments-kubernetes?view=azure-devops
+  
+### GitHub Action 참고자료
+
+* 개요: https://docs.microsoft.com/ko-kr/azure/developer/github/github-actions
+* Azure Board연결: https://docs.microsoft.com/ko-kr/azure/devops/boards/github/?view=azure-devops
+* Azure KeyVault사용: https://docs.microsoft.com/ko-kr/azure/developer/github/github-key-vault
