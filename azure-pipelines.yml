@@ -70,7 +70,7 @@ stages:
         mavenAuthenticateFeed: false
         effectivePomSkip: false
         options: '-DPOSTGRES_URL=$(postgres-url) -DPOSTGRES_USER=$(postgres-user) -DPOSTGRES_PASS=$(postgres-pass)'
-        goals: "-B package"
+        goals: "-B verify"
  
     - task: Maven@3
       displayName: Static Analysis on SonarQube

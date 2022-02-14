@@ -292,7 +292,7 @@ variables:
         mavenAuthenticateFeed: false
         effectivePomSkip: false
         options: '-DPOSTGRES_URL=$(postgres-url) -DPOSTGRES_USER=$(postgres-user) -DPOSTGRES_PASS=$(postgres-pass)'
-        goals: "-B package"
+        goals: "-B verify"
 ```
 
 * Docker 빌드 배포 Task와 upload manifests Task, Deploy Stage는 `RC`, `RELEASE` Tagging시에만 작동하도록 아래의 조건 추가
@@ -663,7 +663,7 @@ jobs:
       id: build-test
       run: |
           cd Application
-          ./mvnw -B verify jacoco:report-aggregate
+          ./mvnw -B verify 
 
     # 한번 다운로드 받은 라이브러리는 Caching
     - name: Save Maven cache
