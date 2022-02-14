@@ -423,7 +423,7 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
         spec:
         containers:
           - name: azurespring 
-            image: <your-registry>/<your-image>
+            image: <your-registry>/<your-project-image>
     ..
             env:
             - name: APPINSIGHTS_INSTRUMENTATIONKEY
@@ -550,11 +550,39 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
 * https://docs.microsoft.com/ko-kr/azure/devops/pipelines/?view=azure-devops
 * https://docs.microsoft.com/ko-kr/azure/devops/pipelines/process/environments-kubernetes?view=azure-devops
 
-**모든 Hands-on이 완료되면 사용하지 않는 리소스는 정리**
+** 모든 Hands-on이 완료되면 사용하지 않는 리소스는 정리 **
 
 # GitHub Action
 
+* GitHub Action의 완성된 파이프라인은 Azure pipeline과 같이 정적점검과 환경 별 승인과정을 사용함.
+
+![github action](img/gta-goal.png)
+
+> KeyVault와 Azure Database for PostgreSQL부문은 생략함.
+
+> 환경설정자동화를 위해 DevOps Starter를 사용하여 구성할 것을 추천. 아래 가이드는 수작업 생성 과정임.
+
 ## Environment생성
+
+### 초기 Workflow생성
+
+* GitHub Action에서 사용할 Service Principal 생성
+```
+az ad sp create-for-rbac --name "myApp" --role contributor \
+                            --scopes /subscriptions/{subscription-id}/resourceGroups/{resource-group} \
+                            --sdk-auth
+```                            
+* Output json을 리파지토리 메뉴 Settings - Secret - Actions - New repository secret에 `AZURE_CREDENTIALS` 항목으로 입력
+
+* Actions - New workflow 선택 - Deployment - `Deploy to a AKS Cluster` - `Configure`
+  
+* 아래 항목을 Settings - Envrionment - New environment에 각각 입력
+  - AZURE_CONTAINER_REGISTRY (name of your container registry)
+  - PROJECT_NAME
+  - RESOURCE_GROUP (where your cluster is deployed)
+  - CLUSTER_NAME (name of your AKS cluster)
+
+
 
 ```yaml
 
