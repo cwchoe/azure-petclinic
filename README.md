@@ -1,5 +1,17 @@
 # Azure DevOps Hands-on
 
+## 주요 목차
+
+1. [DevOps Starter](#devops-starter로-원클릭-구성)
+2. [Hand-on 개요](#hands-on-개요)
+3. [Azure DevOps 구성](#azure-devops-조직-구성)
+4. [필요환경 구성](#git-설정)
+5. [목표 CI/CD 파이프라인 전략](#cicd-pipelineing을-위한-git-branch-전략)
+6. [Azure Pipeline](#azure-pipeline-구성)
+7. [GitHub Action](#github-action)
+
+---
+
 ## DevOps Starter로 원클릭 구성
 
 * 참고문서: <https://docs.microsoft.com/ko-kr/azure/devops-project/overview>
