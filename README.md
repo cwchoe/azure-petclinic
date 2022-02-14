@@ -24,7 +24,7 @@
 2. DevOps Starter for GitHub Action
 ![GitHub Action](img/wholeset-devopsstarter2.png)
 
-## Intermediate Hands-on 개요
+## Hands-on 개요
 
 * 단일 Spring Boot Project, [Spring Petclinic](https://github.com/spring-projects/spring-petclinic)로 Azure의 기본적인 리소스를 사용하며 Azure DevOps를 이용한 프로덕션에 필요한 기본적인 CI/CD pipelining을 구성함.
 
@@ -42,7 +42,7 @@
 * Azure 구독
 * GitHub 계정
 * [Git client](https://git-scm.com/downloads)
-* [Azure Cli](https://docs.microsoft.com/ko-kr/cli/azure/install-azure-cli)
+* [Azure Cli](https://docs.microsoft.com/ko-kr/cli/azure/install-azure-cli) 2.3 이상
 * [kubectl](https://kubernetes.io/ko/docs/tasks/tools/install-kubectl-linux/)
 * [Helm](https://helm.sh/ko/docs/intro/install/)
 * IDE (VS Code, IntelliJ .. )
@@ -110,9 +110,16 @@
 
 * Database생성
 
+  * cli를 통해 DB생성
+  ```bash
+  az postgres db create -g <your-resource> -s <your-postgres> -n petclinic
+  ```
+
+  * 혹은,  `psql`이나 Azure Data Studio를 통해 위 생성된 서비스에 접속하여 아래를 실행
   ```sql
   CREATE DATABASE petclinic;
   ```
+
 * Azure PostgreSQL 연결 보안 완화 - 퍼브릭 액세스, 방화벽규칙, Azure서비스 방문 허용 
 
 ![연결보안](img/postgres-security.png)
@@ -283,11 +290,30 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
 
 > 적절한 Kubernetes Cluster 연결 설정이 되어있어야 함. [여기](https://docs.microsoft.com/ko-kr/azure/aks/kubernetes-walkthrough#connect-to-the-cluster) 참고
 
+* AKS 접속 및 Namespace생성
+  
+```bash
+  az account set --subscription <your-subscription>
+  az aks get-credentials --resource-group <your-resource-group> --name <aks-name>
+
+  kubectl create ns sonarqube
+```
+
+* Helm Chart로 SonarQube 설치
+
 ```bash
     helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
     helm upgrade --install -n sonarqube sonarqube sonarqube/sonarqube --set service.type=LoadBalancer
 ```
 > 상용버전의 [SonarCloud](https://sonarcloud.io/) 사용시 AzurePipeline의 SonarQube용 Task(Run Code Analysis)를 사용할 수 있으나 OSS버전의 SonarQube사용 시 멀티 브랜치 분석을 할 수 없으므로 Maven의 Goal로 실행.
+
+* SonarQube설치가 완료되면 `sonar-url`과 `sonar-token`을 KeyVault에 secret으로 생성.
+
+```bash
+    az keyvault secret set --vault-name <your-keyvault> --name sonar-url --value "http://<sonar>"
+
+    az keyvault secret set --vault-name <your-keyvault> --name sonar-token --value <sonar-token>
+```
 
 * SonarQube는 `mvn sonar:sonar` 형태로 Maven Goal로 실행.
 * `options`에 프로젝트키, SonarQube URL, Token등을 입력 (아래 yaml)
@@ -309,14 +335,25 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
 
 #### AKS 설정
 
+* AKS 접속
+  
+```bash
+  az account set --subscription <your-subscription>
+  az aks get-credentials --resource-group <your-resource-group> --name <aks-name>
+  kubectl get node
+```
+
 * KeyVault의 Secret을 사용하기 위해 [Kubernetes CSI(Container Storage Interface)](https://kubernetes-csi.github.io/docs/)를 사용함
+
 * AKS에서 CSI와 Managed ID를 활성화 시킴
 
 ```bash
     az aks enable-addons -a azure-keyvault-secrets-provider -n <aks-name> -g <resource-group>
     az aks update -n <aks-name> -g <resource-group> --enable-managed-identity
 ```
+
 * 클러스터에 `--enable-managed-identity`를 활성화하면 아래와 같이 objectId (Managed ID)를 얻을 수 있음.
+  
 ```
  "identity": {
         "clientId": "90e35a2c-3a2e-495a-88a6-9ca1cd5d710a",
