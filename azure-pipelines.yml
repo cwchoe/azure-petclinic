@@ -38,8 +38,8 @@ stages:
   - job: Build
     displayName: Build
     pool:
-     name: Default 
-      
+      name: Default 
+      vmImage: $(vmImageName)
     steps:
     # - task: AzureKeyVault@1
     #   inputs:
@@ -106,7 +106,8 @@ stages:
   - deployment: Deploy
     displayName: Deploy
     pool:
-     name: Default 
+      name: Default 
+      vmImage: $(vmImageName)
     environment: 'stage-skr.stg-workshop1'
     strategy:
       runOnce:
