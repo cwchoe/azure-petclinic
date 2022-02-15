@@ -103,15 +103,17 @@ https://ideaboardz.com/for/SKR-start/4338369
 
 ## Azure Board 구성
 
-1. Delivery Plan 생성
-2. 사용자스토리 워크샵 실시 - 백로그 생성
-3. 스프린트 플래닝
+* [Scrum 방법론](https://docs.microsoft.com/ko-kr/devops/plan/what-is-scrum)으로 Iterative 개발 및 Deliviery를 지원하는 Azure Board 사용.
+
+1. Delivery Plan 생성 (Product Backlog)
+2. 스프린트 플래닝
+    * 스프린트 백로그
     * 이터레이션 생성
     * 백로그 (사용자스토리) 스프린트 할당
-4. 스프린트 착수
+3. 스프린트 착수
     * 스토리 포인트 산정
     * 코드 Linking
-5. Board 관리 및 분석
+4. Board 관리 및 분석
 
 ## Git 설정
 
