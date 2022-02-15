@@ -1,4 +1,5 @@
 ![CI](https://github.com/HakjunMIN/skr-sample/actions/workflows/devops-starter-workflow.yml/badge.svg)
+[![Build Status](https://dev.azure.com/andrewmin0240/azure-spring/_apis/build/status/azure-spring?branchName=feature%2Frefactor-app)](https://dev.azure.com/andrewmin0240/azure-spring/_build/latest?definitionId=6&branchName=feature%2Frefactor-app)
 [![Bugs](http://52.141.21.192:9000/api/project_badges/measure?project=azure-spring&metric=bugs&token=52b2322994d4e2e90ede6bb68d6d8584a3992bd7)](http://52.141.21.192:9000/dashboard?id=azure-spring) [![Coverage](http://52.141.21.192:9000/api/project_badges/measure?project=azure-spring&metric=coverage&token=52b2322994d4e2e90ede6bb68d6d8584a3992bd7)](http://52.141.21.192:9000/dashboard?id=azure-spring) [![Code Smells](http://52.141.21.192:9000/api/project_badges/measure?project=azure-spring&metric=code_smells&token=52b2322994d4e2e90ede6bb68d6d8584a3992bd7)](http://52.141.21.192:9000/dashboard?id=azure-spring) [![Vulnerabilities](http://52.141.21.192:9000/api/project_badges/measure?project=azure-spring&metric=vulnerabilities&token=52b2322994d4e2e90ede6bb68d6d8584a3992bd7)](http://52.141.21.192:9000/dashboard?id=azure-spring)
 
 # Azure DevOps Hands-on
@@ -59,7 +60,7 @@ https://ideaboardz.com/for/SKR-start/4338369
 ## 필요 도구
 
 * Azure 구독
-* GitHub 계정
+* GitHub 계정 (무료 계정 가능)
 * [Git client](https://git-scm.com/downloads)
 * [Azure Cli](https://docs.microsoft.com/ko-kr/cli/azure/install-azure-cli) 2.3 이상
 * [kubectl](https://kubernetes.io/ko/docs/tasks/tools/install-kubectl-linux/)
@@ -824,7 +825,7 @@ jobs:
 
 * 뱃지를 통해 현재 리파지토리의 CI/CD, 정적점검, 테스트 커버리지 등을 확인할 수 있음. 
   
-> 본 페이지 맨 위 쪽 샘플) 프로젝트의 뱃지를 참고할 것.
+> 본 페이지 맨 위 쪽 샘플) 프로젝트의 뱃지를 참고할 것. 이 프로젝트의 뱃지가 아닌 다른 샘플 프로젝트의 뱃지임.
 
 ## 참고자료
 
