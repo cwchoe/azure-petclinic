@@ -15,6 +15,9 @@
 8. [참고자료](#참고자료)
 ---
 
+## Intro
+https://ideaboardz.com/for/SKR-start/4338369
+
 ## Quick Start with DevOps Starter
 
 * 참고문서: <https://docs.microsoft.com/ko-kr/azure/devops-project/overview>
@@ -186,6 +189,18 @@
     git remote add origin <Your repo> # ex: git@ssh.dev.azure.com:v3/org/pjt/petclininc
     git push -u origin master
 ```
+
+## 역할 별 리파지토리 구성 방안
+
+![리파지토리샘플](img/devops-code-repo.png)
+
+|순번| 설명 | 특징|
+|--|--|--|
+|1| 프로젝트마다 개발, 테스트, 인프라코드를 상위 디렉토리에 두고 통합 구성 | 통합적 관리가 수월하나 commit, PR시 복잡성증가 |
+|2| 개발, 테스트, 인프라를 별도의 프로젝트로 관리 | 통합적 관리가 어려우나 각 역할 별 명확한 commit, PR관리의 유리 |
+|3| 개발, 테스트 통합 Repo, 인프라 통합 Repo로 관리 | 테스트엔지니어나 DevOps엔지니어가 Cross Function 혹은 공용 리소스일 때 각 팀의 통합적 관리 유리. |
+
+* 조직, 역할, 리파지토리 관리 역량에 따라 리파지토리 전략을 선택할 수 있음. 파이프라인 구성 시 필요한 리파지토리를 Checkout받아 사용.
 
 ## CI/CD Pipelineing을 위한 Git Branch 전략
 
@@ -523,44 +538,11 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
               imagePullSecrets: |
                 $(imagePullSecret)
               containers: |
-                $(containerRegistry)/$(imageRepository):$(tag)
-
-- stage: Deploy_prod
-  displayName: Deploy production
-  dependsOn: Build
-  condition: contains(variables['build.sourceBranch'], 'RELEASE')
-
-  jobs:
-  - deployment: Deploy
-    displayName: Deploy
-    pool:
-      vmImage: $(vmImageName)
-    environment: 'prod.prodd82'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: KubernetesManifest@0
-            displayName: Create imagePullSecret
-            inputs:
-              action: createSecret
-              secretName: $(imagePullSecret)
-              dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
-
-          - task: KubernetesManifest@0
-            displayName: Deploy to Kubernetes cluster
-            inputs:
-              action: deploy
-              manifests: |
-                $(Pipeline.Workspace)/manifests/deployment.yml
-                $(Pipeline.Workspace)/manifests/secretproviderclass.yml
-                $(Pipeline.Workspace)/manifests/service.yml
-              imagePullSecrets: |
-                $(imagePullSecret)
-              containers: |
-                $(containerRegistry)/$(imageRepository):$(tag)                
+                $(containerRegistry)/$(imageRepository):$(tag)             
          
 ```
+
+> Stage배포를 복사하여 Environment만 변경한 후 Prod배포 스크립트를 완성.
 
 ### 파이프라인 테스트
 
@@ -836,6 +818,12 @@ jobs:
 
 ### [Azure Pipeline과 동일](#파이프라인-테스트)
 
+## CI/CD 뱃지 생성
+
+* 뱃지를 통해 현재 리파지토리의 CI/CD, 정적점검, 테스트 커버리지 등을 확인할 수 있음. 
+  
+> 본 페이지 맨 위 쪽 샘플) 프로젝트의 뱃지를 참고할 것.
+
 ## 참고자료
 
 ### Azure Pipeline 참고자료
@@ -850,3 +838,7 @@ jobs:
 * GitHub Action 문서: https://docs.github.com/en/actions
 * Azure Board연결: https://docs.microsoft.com/ko-kr/azure/devops/boards/github/?view=azure-devops
 * Azure KeyVault사용: https://docs.microsoft.com/ko-kr/azure/developer/github/github-key-vault
+
+## 회고
+
+https://ideaboardz.com/for/SKR-Retrospective/4338366
