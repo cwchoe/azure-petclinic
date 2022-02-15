@@ -204,7 +204,7 @@ https://ideaboardz.com/for/SKR-start/4338369
 
 ## CI/CD Pipelineing을 위한 Git Branch 전략
 
-* GitHub Branch와 Git Branch 전략을 혼합하여 간결하지만 통제가 가능한 효율적인 Branch전략을 운영함.
+* [GitHub flow](https://docs.github.com/en/get-started/quickstart/github-flow)전략과 [Git flow](https://nvie.com/posts/a-successful-git-branching-model/) 전략을 혼합하여 간결하지만 통제가 가능한 효율적인 Branch전략을 운영함.
 
 ![Git branch](img/gitbranch.png)
 
