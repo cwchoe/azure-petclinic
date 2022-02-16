@@ -387,6 +387,13 @@ condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variable
     az aks enable-addons -a azure-keyvault-secrets-provider -n <aks-name> -g <resource-group>
     az aks update -n <aks-name> -g <resource-group> --enable-managed-identity
 ```
+* 위 명령어 중 첫번쨰가 잘 안되면
+* az aks addon enable --addon azure-keyvault-secrets-provider -n skr-evpark-d-aks -g skr-evpark-d-rg
+* The command requires the extension aks-preview. Do you want to install it now? The command will continue to run after the extension is installed. (Y/n): Y
+Run 'az config set extension.use_dynamic_install=yes_without_prompt' to allow installing extensions without prompt.
+The installed extension 'aks-preview' is in preview.
+
+
 
 * 클러스터에 `--enable-managed-identity`를 활성화하면 아래와 같이 objectId (Managed ID)를 얻을 수 있음.
   
