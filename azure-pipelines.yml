@@ -56,7 +56,13 @@ stages:
           maven | "$(Agent.OS)"
           maven
         path: $(MAVEN_CACHE_FOLDER) 
-
+    - task: JavaToolInstaller@0
+      inputs:
+        versionSpec: '11'
+        jdkArchitectureOption: 'x64'
+        jdkSourceOption: 'LocalDirectory'
+        jdkFile: '/home/skrevparkadmin/openjdk-11.0.2_linux-x64_bin.tar.gz'
+        cleanDestinationDirectory: false
     - task: Maven@3
       displayName: Maven Build
       inputs:
@@ -65,9 +71,11 @@ stages:
         codeCoverageTool: 'jacoco'
         codeCoverageClassFilesDirectories:  'Application/target/classes, Application/target/testClasses'
         codeCoverageSourceDirectories: 'Application/src/java, Application/src/test'
+        mavenVersionOption: 'Path' # Options: default, path
+        mavenDirectory: /home/skrevparkadmin/apache-maven-3.8.4 # Required when mavenVersionOption == Path
+        mavenSetM2Home: true # Required when mavenVersionOption == Path
         javaHomeOption: 'JDKVersion'
         jdkVersionOption: 1.11
-        mavenVersionOption: 'Default'
         mavenOptions: '$(MAVEN_OPTS)'
         mavenAuthenticateFeed: false
         effectivePomSkip: false
