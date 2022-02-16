@@ -102,13 +102,13 @@ stages:
           $(tag)
 
     - upload: manifests
-      condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variables['build.sourceBranch'], 'RELEASE'))
+      # condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variables['build.sourceBranch'], 'RELEASE'))
       artifact: manifests
 
 - stage: Deploy
   displayName: Deploy stage
   dependsOn: Build
-  condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variables['build.sourceBranch'], 'RELEASE'))
+  # condition: OR(contains(variables['build.sourceBranch'], 'RC'), contains(variables['build.sourceBranch'], 'RELEASE'))
 
   jobs:
   - deployment: Deploy
