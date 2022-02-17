@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: azurespring 
-          image: springsampleacr.azurecr.io/exec
+          image: evparkdevopsacr.azurecr.io/petclinic
           ports:
           - containerPort: 80
           # volumeMounts:
