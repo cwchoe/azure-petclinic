@@ -21,6 +21,10 @@ spec:
           # - name: secrets-store01-inline
           #   mountPath: "/mnt/secrets-store"
           #   readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
           env:
           - name: APPINSIGHTS_INSTRUMENTATIONKEY
             value: ""
